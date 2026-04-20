@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Search, Sparkles, Clock, X, Filter, ChevronDown } from 'lucide-react';
+import { MagnifyingGlassIcon, SparklesIcon, ClockIcon, XMarkIcon, FunnelIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { searchEmails } from '../api/search';
 import { useAppStore } from '../store/appStore';
 import type { SearchResponse, EmailCard } from '../types';
@@ -95,7 +95,7 @@ const SearchPage: React.FC = () => {
       {/* Search bar */}
       <div className="search-page__bar-wrap">
         <div className={`search-page__bar ${isPending ? 'search-page__bar--loading' : ''}`}>
-          <Search size={20} className="search-page__bar-icon" />
+          <MagnifyingGlassIcon width={20} className="search-page__bar-icon" />
           <input
             ref={inputRef}
             id="search-main-input"
@@ -110,7 +110,7 @@ const SearchPage: React.FC = () => {
           />
           {query && (
             <button className="search-page__clear" onClick={() => { setQuery(''); setResult(null); }}>
-              <X size={14} />
+              <XMarkIcon width={14} />
             </button>
           )}
           <button
@@ -119,7 +119,7 @@ const SearchPage: React.FC = () => {
             onClick={() => handleSearch(query)}
             disabled={isPending}
           >
-            {isPending ? <span className="search-page__dots"><span/><span/><span/></span> : <Sparkles size={16} />}
+            {isPending ? <span className="search-page__dots"><span/><span/><span/></span> : <SparklesIcon width={16} />}
             <span>{isPending ? 'Thinking…' : 'Search'}</span>
           </button>
         </div>
@@ -132,7 +132,7 @@ const SearchPage: React.FC = () => {
                 <div className="search-page__dropdown-section">Recent</div>
                 {recentQueries.slice(0, 4).map((q) => (
                   <button key={q} className="search-page__dropdown-item" onMouseDown={() => { setQuery(q); handleSearch(q); }}>
-                    <Clock size={13} /> {q}
+                    <ClockIcon width={13} /> {q}
                   </button>
                 ))}
               </>
@@ -140,7 +140,7 @@ const SearchPage: React.FC = () => {
             <div className="search-page__dropdown-section">Suggestions</div>
             {SUGGESTION_PROMPTS.slice(0, 4).map((p) => (
               <button key={p} className="search-page__dropdown-item" onMouseDown={() => { setQuery(p); handleSearch(p); }}>
-                <Sparkles size={13} /> {p}
+                <SparklesIcon width={13} /> {p}
               </button>
             ))}
           </div>
@@ -189,7 +189,7 @@ const SearchPage: React.FC = () => {
           {/* Answer card */}
           <div className="search-page__answer animate-fade-in">
             <div className="search-page__answer-header">
-              <Sparkles size={16} className="search-page__answer-icon" />
+              <SparklesIcon width={16} className="search-page__answer-icon" />
               <span>AI Answer</span>
               <span className="search-page__query-time">{result.query_time_ms}ms</span>
             </div>
@@ -202,7 +202,7 @@ const SearchPage: React.FC = () => {
               {result.sources.length} source{result.sources.length !== 1 ? 's' : ''} found
             </span>
             <button className="search-page__filter-btn" id="search-filter-btn">
-              <Filter size={13} /> Filter <ChevronDown size={13} />
+              <FunnelIcon width={13} /> Filter <ChevronDownIcon width={13} />
             </button>
           </div>
 

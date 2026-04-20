@@ -1,19 +1,15 @@
 import React from 'react';
-import {
-  Home, Search, LayoutDashboard, Beaker,
-  Settings, ChevronLeft, ChevronRight,
-  Mail, Zap, TrendingUp,
-} from 'lucide-react';
+import { HomeIcon, MagnifyingGlassIcon, Squares2X2Icon, BeakerIcon, Cog6ToothIcon, ChevronLeftIcon, ChevronRightIcon, EnvelopeIcon, BoltIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
 import { useAppStore } from '../../store/appStore';
 import type { Page } from '../../types';
 import './Sidebar.css';
 
 const NAV_ITEMS: { id: Page; icon: React.ReactNode; label: string; badge?: string }[] = [
-  { id: 'home',      icon: <Home size={18} />,          label: 'Home' },
-  { id: 'search',    icon: <Search size={18} />,        label: 'Smart Search' },
-  { id: 'dashboard', icon: <LayoutDashboard size={18} />, label: 'Analytics' },
-  { id: 'analyse',   icon: <Beaker size={18} />,        label: 'AI Analysis' },
-  { id: 'settings',  icon: <Settings size={18} />,      label: 'Settings' },
+  { id: 'home',      icon: <HomeIcon width={18} />,          label: 'Home' },
+  { id: 'search',    icon: <MagnifyingGlassIcon width={18} />,        label: 'Smart Search' },
+  { id: 'dashboard', icon: <Squares2X2Icon width={18} />, label: 'Analytics' },
+  { id: 'analyse',   icon: <BeakerIcon width={18} />,        label: 'AI Analysis' },
+  { id: 'settings',  icon: <Cog6ToothIcon width={18} />,      label: 'Settings' },
 ];
 
 const Sidebar: React.FC = () => {
@@ -24,7 +20,7 @@ const Sidebar: React.FC = () => {
       {/* Logo */}
       <div className="sidebar__logo">
         <div className="sidebar__logo-icon">
-          <Mail size={20} />
+          <EnvelopeIcon width={20} />
         </div>
         {!sidebarCollapsed && (
           <div className="sidebar__logo-text">
@@ -73,11 +69,11 @@ const Sidebar: React.FC = () => {
       {!sidebarCollapsed && (
         <div className="sidebar__stats">
           <div className="sidebar__stat">
-            <Zap size={12} className="sidebar__stat-icon" />
+            <BoltIcon width={12} className="sidebar__stat-icon" />
             <span>Groq LLM Active</span>
           </div>
           <div className="sidebar__stat">
-            <TrendingUp size={12} className="sidebar__stat-icon" />
+            <ArrowTrendingUpIcon width={12} className="sidebar__stat-icon" />
             <span>Free tier</span>
           </div>
         </div>
@@ -85,7 +81,7 @@ const Sidebar: React.FC = () => {
 
       {/* Collapse toggle */}
       <button className="sidebar__toggle" onClick={toggleSidebar} id="sidebar-toggle">
-        {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        {sidebarCollapsed ? <ChevronRightIcon width={16} /> : <ChevronLeftIcon width={16} />}
       </button>
     </aside>
   );

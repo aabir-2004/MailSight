@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, RefreshCw, User, Search } from 'lucide-react';
+import { BellIcon, ArrowPathIcon, UserIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useAppStore } from '../../store/appStore';
 import './Topbar.css';
 
@@ -45,7 +45,7 @@ const Topbar: React.FC = () => {
         id="topbar-search-shortcut"
         onClick={() => setActivePage('search')}
       >
-        <Search size={14} />
+        <MagnifyingGlassIcon width={14} />
         <span>Search your inbox…</span>
         <kbd className="topbar__kbd">⌘K</kbd>
       </button>
@@ -60,12 +60,12 @@ const Topbar: React.FC = () => {
           title="Sync Gmail"
           disabled={syncState.status === 'syncing'}
         >
-          <RefreshCw size={16} className={syncState.status === 'syncing' ? 'animate-spin' : ''} />
+          <ArrowPathIcon width={16} className={syncState.status === 'syncing' ? 'animate-spin' : ''} />
         </button>
 
         {/* Notifications */}
         <button className="topbar__action-btn" id="topbar-notifications" title="Notifications">
-          <Bell size={16} />
+          <BellIcon width={16} />
           <span className="topbar__notif-dot" />
         </button>
 
@@ -74,7 +74,7 @@ const Topbar: React.FC = () => {
           {user?.picture ? (
             <img src={user.picture} alt={user.name} />
           ) : (
-            <User size={16} />
+            <UserIcon width={16} />
           )}
         </button>
       </div>

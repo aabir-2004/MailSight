@@ -4,7 +4,7 @@
   right: 0;
   height: 64px;
   left: var(--sidebar-width, 230px);
-  background: rgba(10, 11, 15, 0.85);
+  background: var(--bg-glass);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-subtle);
@@ -121,7 +121,7 @@
   height: 36px;
   border-radius: 50%;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+  background: var(--text-primary);
   display: flex;
   align-items: center;
   justify-content: center;

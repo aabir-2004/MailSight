@@ -24,7 +24,7 @@
   overflow: hidden;
 }
 
-.settings__card--danger { border-color: rgba(244,63,94,0.2); }
+.settings__card--danger { border-color: var(--border-medium); }
 
 .settings__row {
   display: flex;
@@ -77,7 +77,7 @@
 .settings__avatar {
   width: 52px; height: 52px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+  background: var(--text-primary);
   display: flex; align-items: center; justify-content: center;
   color: white;
   font-size: 20px;
@@ -122,8 +122,8 @@
 .settings__btn--ghost:hover { border-color: var(--border-accent); color: var(--accent-purple-light); }
 
 .settings__btn--danger {
-  background: rgba(244,63,94,0.1);
-  border: 1px solid rgba(244,63,94,0.3);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
   color: var(--accent-rose);
 }
 .settings__btn--danger:hover { background: var(--accent-rose); color: white; }

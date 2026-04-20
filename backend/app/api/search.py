@@ -1,6 +1,8 @@
+from __future__ import annotations
 from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Any
+from app.services.search_service import perform_rag_search
 
 router = APIRouter()
 
@@ -44,9 +46,14 @@ async def search_emails(req: SearchRequest):
     4. RRF fusion → top-k
     5. Groq LLM synthesis → grounded answer
     """
-    # Placeholder implementation — real logic in services/search_service.py
+    # Using a dummy user_id since auth isn't fully passed in this route yet.
+    # In a full deployment, `user_id` should come from `Depends(get_current_user)`
+    dummy_user_id = "00000000-0000-0000-0000-000000000000"
+    
+    result = await perform_rag_search(req.query, dummy_user_id, req.top_k)
+    
     return SearchResponse(
-        answer=f"Placeholder LLM answer for: '{req.query}'",
-        sources=[],
-        query_time_ms=0,
+        answer=result['answer'],
+        sources=result['sources'],
+        query_time_ms=result['query_time_ms'],
     )

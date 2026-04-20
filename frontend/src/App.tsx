@@ -11,6 +11,7 @@ const SearchPage    = React.lazy(() => import('./pages/SearchPage'));
 const DashboardPage = React.lazy(() => import('./pages/DashboardPage'));
 const AnalysePage   = React.lazy(() => import('./pages/AnalysePage'));
 const SettingsPage  = React.lazy(() => import('./pages/SettingsPage'));
+const AuthPage      = React.lazy(() => import('./pages/AuthPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,7 +28,15 @@ const PageSkeleton: React.FC = () => (
 );
 
 const AppLayout: React.FC = () => {
-  const { activePage, sidebarCollapsed } = useAppStore();
+  const { activePage, sidebarCollapsed, isAuthenticated } = useAppStore();
+
+  if (!isAuthenticated) {
+    return (
+      <Suspense fallback={<PageSkeleton />}>
+        <AuthPage />
+      </Suspense>
+    );
+  }
 
   const renderPage = () => {
     switch (activePage) {
@@ -42,10 +51,6 @@ const AppLayout: React.FC = () => {
 
   return (
     <div className={`app-shell ${sidebarCollapsed ? 'app-shell--collapsed' : ''}`}>
-      {/* Background orbs */}
-      <div className="orb orb-1" />
-      <div className="orb orb-2" />
-
       <Sidebar />
       <Topbar />
 

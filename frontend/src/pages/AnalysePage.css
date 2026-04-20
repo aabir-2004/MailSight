@@ -84,7 +84,7 @@
   gap: 7px;
   padding: 9px 18px;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-blue) 100%);
+  background: var(--text-primary);
   color: white;
   font-size: 13px;
   font-weight: 600;
@@ -151,8 +151,8 @@
 .analyse-page__empty-icon {
   width: 72px; height: 72px;
   border-radius: var(--radius-xl);
-  background: rgba(124,92,252,0.1);
-  border: 1px solid rgba(124,92,252,0.2);
+  background: var(--bg-card);
+  border: 1px solid var(--text-primary);
   display: flex; align-items: center; justify-content: center;
   color: var(--accent-purple-light);
   margin-bottom: 8px;
@@ -189,7 +189,7 @@
 .analyse-page__loading-fill {
   height: 100%;
   width: 40%;
-  background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+  background: var(--text-primary);
   border-radius: 99px;
   animation: shimmer 1.5s ease-in-out infinite;
   background-size: 200% 100%;

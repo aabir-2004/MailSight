@@ -144,7 +144,7 @@
 .heatmap__cell {
   height: 18px;
   border-radius: 3px;
-  background: rgba(124, 92, 252, calc(var(--intensity, 0) * 0.85 + 0.05));
+  background: rgba(0, 0, 0, calc(var(--intensity, 0) * 0.4 + 0.05));
   transition: transform var(--transition-fast), background var(--transition-fast);
   cursor: crosshair;
 }

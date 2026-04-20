@@ -1,13 +1,13 @@
 import React from 'react';
 import { useAppStore } from '../../store/appStore';
-import { CheckCircle, XCircle, Info, AlertTriangle, X } from 'lucide-react';
+import { CheckCircleIcon, XCircleIcon, InformationCircleIcon, ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import './Notifications.css';
 
 const ICONS = {
-  success: <CheckCircle size={16} />,
-  error:   <XCircle size={16} />,
-  info:    <Info size={16} />,
-  warning: <AlertTriangle size={16} />,
+  success: <CheckCircleIcon width={16} />,
+  error:   <XCircleIcon width={16} />,
+  info:    <InformationCircleIcon width={16} />,
+  warning: <ExclamationTriangleIcon width={16} />,
 };
 
 const Notifications: React.FC = () => {
@@ -23,7 +23,7 @@ const Notifications: React.FC = () => {
             {n.message && <div className="notification__msg">{n.message}</div>}
           </div>
           <button className="notification__close" onClick={() => removeNotification(n.id)}>
-            <X size={13} />
+            <XMarkIcon width={13} />
           </button>
         </div>
       ))}

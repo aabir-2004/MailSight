@@ -1,6 +1,9 @@
+from __future__ import annotations
 from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Any, Literal
+import time
+from app.services.analyse_service import generate_dynamic_analysis
 
 router = APIRouter()
 
@@ -30,20 +33,24 @@ class CustomQueryResponse(BaseModel):
 @router.post("/analyse/custom", response_model=CustomQueryResponse)
 async def custom_analyse(req: CustomQueryRequest):
     """
-    1. Pass user query + DB schema description to Groq mixtral-8x7b
-    2. LLM outputs chart_type, SQL-like analysis spec, explanation
-    3. Execute query against Supabase
-    4. Return chart data + explanation
+    Pass user query + DB schema description to Groq mixtral-8x7b
+    Returns dynamically constructed Recharts JSON schema
     """
+    start_time = time.time()
+    
+    analysis_data = await generate_dynamic_analysis(req.query, req.preferred_chart_type)
+    
+    query_time_ms = int((time.time() - start_time) * 1000)
+    
     return CustomQueryResponse(
         query_text=req.query,
         chart_spec=ChartSpec(
-            type="bar",
-            title="Email Volume by Sender Domain",
-            x_label="domain",
-            y_label="count",
-            data=[{"domain": "github.com", "count": 142}, {"domain": "notion.so", "count": 63}],
+            type=analysis_data.get("type", "bar"),
+            title=analysis_data.get("title", "AI Graph Analysis"),
+            x_label=analysis_data.get("x_label", ""),
+            y_label=analysis_data.get("y_label", ""),
+            data=analysis_data.get("data", [])
         ),
-        explanation=f"Placeholder explanation for: '{req.query}'",
-        query_time_ms=0,
+        explanation=analysis_data.get("explanation", "Here is your generated chart."),
+        query_time_ms=query_time_ms,
     )

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppStore } from '../store/appStore';
-import { Shield, RefreshCw, Trash2, Moon, Database, Key, ChevronRight } from 'lucide-react';
+import { ShieldCheckIcon, ArrowPathIcon, TrashIcon, MoonIcon, CircleStackIcon, KeyIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import './SettingsPage.css';
 
 const SettingsPage: React.FC = () => {
@@ -39,8 +39,11 @@ const SettingsPage: React.FC = () => {
               <div className="settings__profile-name">{user?.name ?? 'Not connected'}</div>
               <div className="settings__profile-email">{user?.email ?? 'Connect Gmail to get started'}</div>
             </div>
-            <button className="settings__btn settings__btn--ghost" id="settings-connect-btn">
-              Connect Gmail <ChevronRight size={14} />
+            <button className="settings__btn settings__btn--ghost" id="settings-connect-btn" onClick={() => {
+              const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+              window.location.href = `${baseUrl}/v1/auth/google`;
+            }}>
+              Connect Gmail <ChevronRightIcon width={14} />
             </button>
           </div>
         </div>
@@ -52,8 +55,8 @@ const SettingsPage: React.FC = () => {
         <div className="settings__card">
           <div className="settings__row">
             <div className="settings__row-left">
-              <div className="settings__row-icon" style={{ background: 'rgba(124,92,252,0.15)', color: 'var(--accent-purple-light)' }}>
-                <RefreshCw size={16} />
+              <div className="settings__row-icon">
+                <ArrowPathIcon width={16} />
               </div>
               <div>
                 <div className="settings__row-title">Sync Date Range</div>
@@ -81,8 +84,8 @@ const SettingsPage: React.FC = () => {
           <div className="settings__divider" />
           <div className="settings__row">
             <div className="settings__row-left">
-              <div className="settings__row-icon" style={{ background: 'rgba(52,211,153,0.15)', color: 'var(--accent-green)' }}>
-                <Database size={16} />
+              <div className="settings__row-icon">
+                <CircleStackIcon width={16} />
               </div>
               <div>
                 <div className="settings__row-title">Full Re-sync</div>
@@ -102,8 +105,8 @@ const SettingsPage: React.FC = () => {
         <div className="settings__card">
           <div className="settings__row">
             <div className="settings__row-left">
-              <div className="settings__row-icon" style={{ background: 'rgba(79,156,249,0.15)', color: 'var(--accent-blue)' }}>
-                <Shield size={16} />
+              <div className="settings__row-icon">
+                <ShieldCheckIcon width={16} />
               </div>
               <div>
                 <div className="settings__row-title">OAuth Scope</div>
@@ -115,8 +118,8 @@ const SettingsPage: React.FC = () => {
           <div className="settings__divider" />
           <div className="settings__row">
             <div className="settings__row-left">
-              <div className="settings__row-icon" style={{ background: 'rgba(251,191,36,0.15)', color: 'var(--accent-amber)' }}>
-                <Key size={16} />
+              <div className="settings__row-icon">
+                <KeyIcon width={16} />
               </div>
               <div>
                 <div className="settings__row-title">Token Encryption</div>
@@ -134,8 +137,8 @@ const SettingsPage: React.FC = () => {
         <div className="settings__card">
           <div className="settings__row">
             <div className="settings__row-left">
-              <div className="settings__row-icon" style={{ background: 'rgba(34,211,238,0.15)', color: 'var(--accent-cyan)' }}>
-                <Moon size={16} />
+              <div className="settings__row-icon">
+                <MoonIcon width={16} />
               </div>
               <div>
                 <div className="settings__row-title">Theme</div>
@@ -156,8 +159,8 @@ const SettingsPage: React.FC = () => {
         <div className="settings__card settings__card--danger">
           <div className="settings__row">
             <div className="settings__row-left">
-              <div className="settings__row-icon" style={{ background: 'rgba(244,63,94,0.15)', color: 'var(--accent-rose)' }}>
-                <Trash2 size={16} />
+              <div className="settings__row-icon">
+                <TrashIcon width={16} />
               </div>
               <div>
                 <div className="settings__row-title">Delete Account & Data</div>

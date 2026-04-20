@@ -6,7 +6,7 @@ import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { Sparkles, Send, Save, Clock, BarChart2 } from 'lucide-react';
+import { SparklesIcon, PaperAirplaneIcon, BookmarkIcon, ClockIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import './AnalysePage.css';
 
 const PALETTE = ['#7c5cfc','#4f9cf9','#22d3ee','#34d399','#fbbf24','#f43f5e','#fb923c'];
@@ -29,7 +29,7 @@ function ChartRenderer({ spec }: { spec: ChartSpec }) {
     return (
       <ResponsiveContainer width="100%" height={280}>
         <PieChart>
-          <Pie data={data} dataKey={yKey} nameKey={xKey} cx="50%" cy="50%" outerRadius={110} paddingAngle={2} label={({ name, value }: { name: string; value: number }) => `${name}: ${value}`}>
+          <Pie data={data} dataKey={yKey} nameKey={xKey} cx="50%" cy="50%" outerRadius={110} paddingAngle={2} label={({ name, value }: any) => `${name || 'Unknown'}: ${value}`}>
             {data.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
           </Pie>
           <Tooltip
@@ -44,7 +44,7 @@ function ChartRenderer({ spec }: { spec: ChartSpec }) {
     return (
       <ResponsiveContainer width="100%" height={280}>
         <LineChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#dee2e6" />
           <XAxis dataKey={xKey} tick={{ fontSize:10, fill:'var(--text-muted)' }} />
           <YAxis tick={{ fontSize:10, fill:'var(--text-muted)' }} />
           <Tooltip contentStyle={{ background:'var(--bg-card)', border:'1px solid var(--border-medium)', borderRadius:10 }} itemStyle={{ color:'var(--text-primary)' }} />
@@ -57,7 +57,7 @@ function ChartRenderer({ spec }: { spec: ChartSpec }) {
   return (
     <ResponsiveContainer width="100%" height={280}>
       <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#dee2e6" />
         <XAxis dataKey={xKey} tick={{ fontSize:10, fill:'var(--text-muted)' }} />
         <YAxis tick={{ fontSize:10, fill:'var(--text-muted)' }} />
         <Tooltip contentStyle={{ background:'var(--bg-card)', border:'1px solid var(--border-medium)', borderRadius:10 }} itemStyle={{ color:'var(--text-primary)' }} />
@@ -94,7 +94,7 @@ const AnalysePage: React.FC = () => {
         {/* Query input */}
         <div className="analyse-page__query-card">
           <div className="analyse-page__query-header">
-            <Sparkles size={18} className="analyse-page__query-icon" />
+            <SparklesIcon width={18} className="analyse-page__query-icon" />
             <h2 className="analyse-page__query-title">Custom Analysis</h2>
           </div>
           <p className="analyse-page__query-desc">
@@ -117,7 +117,7 @@ const AnalysePage: React.FC = () => {
               onClick={() => { if (query.trim()) submit(query.trim()); }}
               disabled={isPending || !query.trim()}
             >
-              {isPending ? 'Generating…' : <><Send size={14} /> Analyse</>}
+              {isPending ? 'Generating…' : <><PaperAirplaneIcon width={14} /> Analyse</>}
             </button>
           </div>
         </div>
@@ -127,7 +127,7 @@ const AnalysePage: React.FC = () => {
           <div className="analyse-page__examples-label">Example queries</div>
           {EXAMPLE_QUERIES.map((q) => (
             <button key={q} className="analyse-page__example-item" onClick={() => setQuery(q)}>
-              <BarChart2 size={13} /> {q}
+              <ChartBarIcon width={13} /> {q}
             </button>
           ))}
         </div>
@@ -142,7 +142,7 @@ const AnalysePage: React.FC = () => {
                 className="analyse-page__example-item"
                 onClick={() => { setQuery(sq.query_text); submit(sq.query_text); }}
               >
-                <Clock size={13} /> {sq.name}
+                <ClockIcon width={13} /> {sq.name}
               </button>
             ))}
           </div>
@@ -154,7 +154,7 @@ const AnalysePage: React.FC = () => {
         {!result && !isPending && (
           <div className="analyse-page__empty">
             <div className="analyse-page__empty-icon animate-float">
-              <Sparkles size={36} />
+              <SparklesIcon width={36} />
             </div>
             <h3>Ask a question to generate a chart</h3>
             <p>The AI will interpret your query, run analysis on your inbox data, and render an interactive visualization with a natural language explanation.</p>
@@ -187,7 +187,7 @@ const AnalysePage: React.FC = () => {
                 <div className="analyse-page__chart-actions">
                   <span className="analyse-page__qtime">{result.query_time_ms}ms</span>
                   <button className="analyse-page__save-btn" id="analyse-save-btn" onClick={() => setShowSave(true)}>
-                    <Save size={14} /> Save
+                    <BookmarkIcon width={14} /> Save
                   </button>
                 </div>
               </div>
@@ -197,7 +197,7 @@ const AnalysePage: React.FC = () => {
             {/* Explanation */}
             <div className="analyse-page__explanation">
               <div className="analyse-page__explanation-label">
-                <Sparkles size={14} /> AI Explanation
+                <SparklesIcon width={14} /> AI Explanation
               </div>
               <p>{result.explanation}</p>
             </div>

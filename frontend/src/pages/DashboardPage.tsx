@@ -10,10 +10,7 @@ import {
   fetchTopSenders, fetchHeatmap, fetchThreadDepth,
 } from '../api/analytics';
 import StatCard from '../components/Common/StatCard';
-import {
-  Mail, Users, Tag, MessageSquare, TrendingUp,
-  Clock, Star, Eye, BarChart2, Activity,
-} from 'lucide-react';
+import { EnvelopeIcon, UsersIcon, TagIcon, ChatBubbleBottomCenterTextIcon, ArrowTrendingUpIcon, ClockIcon, StarIcon, EyeIcon, ChartBarIcon, ChartBarSquareIcon } from '@heroicons/react/24/outline';
 import './DashboardPage.css';
 
 const PALETTE = ['#7c5cfc', '#4f9cf9', '#22d3ee', '#34d399', '#fbbf24', '#f43f5e', '#fb923c'];
@@ -89,7 +86,7 @@ const DashboardPage: React.FC = () => {
         <StatCard
           title="Total Emails"
           value={loadingSummary ? '…' : formatNum(summary?.total_emails)}
-          icon={<Mail size={16} />}
+          icon={<EnvelopeIcon width={16} />}
           color="purple"
           subtitle="All time"
           delay={0}
@@ -97,7 +94,7 @@ const DashboardPage: React.FC = () => {
         <StatCard
           title="Unique Senders"
           value={loadingSummary ? '…' : formatNum(summary?.total_senders)}
-          icon={<Users size={16} />}
+          icon={<UsersIcon width={16} />}
           color="blue"
           subtitle="Distinct addresses"
           delay={60}
@@ -105,7 +102,7 @@ const DashboardPage: React.FC = () => {
         <StatCard
           title="Labels"
           value={loadingSummary ? '…' : summary?.total_labels ?? '—'}
-          icon={<Tag size={16} />}
+          icon={<TagIcon width={16} />}
           color="cyan"
           subtitle="Gmail categories"
           delay={120}
@@ -113,7 +110,7 @@ const DashboardPage: React.FC = () => {
         <StatCard
           title="Threads"
           value={loadingSummary ? '…' : formatNum(summary?.total_threads)}
-          icon={<MessageSquare size={16} />}
+          icon={<ChatBubbleBottomCenterTextIcon width={16} />}
           color="green"
           subtitle="Conversations"
           delay={180}
@@ -121,7 +118,7 @@ const DashboardPage: React.FC = () => {
         <StatCard
           title="Avg/Day"
           value={loadingSummary ? '…' : summary?.avg_emails_per_day?.toFixed(1) ?? '—'}
-          icon={<TrendingUp size={16} />}
+          icon={<ArrowTrendingUpIcon width={16} />}
           color="amber"
           subtitle="Emails received"
           delay={240}
@@ -129,7 +126,7 @@ const DashboardPage: React.FC = () => {
         <StatCard
           title="Busiest Hour"
           value={loadingSummary ? '…' : summary ? `${summary.busiest_hour}:00` : '—'}
-          icon={<Clock size={16} />}
+          icon={<ClockIcon width={16} />}
           color="rose"
           subtitle="Peak activity time"
           delay={300}
@@ -137,7 +134,7 @@ const DashboardPage: React.FC = () => {
         <StatCard
           title="Unread"
           value={loadingSummary ? '…' : formatNum(summary?.unread_count)}
-          icon={<Eye size={16} />}
+          icon={<EyeIcon width={16} />}
           color="rose"
           subtitle="Pending emails"
           delay={360}
@@ -145,7 +142,7 @@ const DashboardPage: React.FC = () => {
         <StatCard
           title="Starred"
           value={loadingSummary ? '…' : formatNum(summary?.starred_count)}
-          icon={<Star size={16} />}
+          icon={<StarIcon width={16} />}
           color="amber"
           subtitle="Important emails"
           delay={420}
@@ -161,7 +158,7 @@ const DashboardPage: React.FC = () => {
               <h3 className="dashboard__chart-title">Email Volume Over Time</h3>
               <p className="dashboard__chart-sub">Daily received count</p>
             </div>
-            <Activity size={18} className="dashboard__chart-icon" />
+            <ChartBarSquareIcon width={18} className="dashboard__chart-icon" />
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={volume} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
@@ -171,7 +168,7 @@ const DashboardPage: React.FC = () => {
                   <stop offset="95%" stopColor="#7c5cfc" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#dee2e6" />
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
                 tickFormatter={(v: string) => v.slice(5)} />
               <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
@@ -189,7 +186,7 @@ const DashboardPage: React.FC = () => {
               <h3 className="dashboard__chart-title">By Label</h3>
               <p className="dashboard__chart-sub">Category distribution</p>
             </div>
-            <Tag size={18} className="dashboard__chart-icon" />
+            <TagIcon width={18} className="dashboard__chart-icon" />
           </div>
           <ResponsiveContainer width="100%" height={180}>
             <PieChart>
@@ -228,11 +225,11 @@ const DashboardPage: React.FC = () => {
               <h3 className="dashboard__chart-title">Top Senders</h3>
               <p className="dashboard__chart-sub">By volume</p>
             </div>
-            <BarChart2 size={18} className="dashboard__chart-icon" />
+            <ChartBarIcon width={18} className="dashboard__chart-icon" />
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={senders} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#dee2e6" horizontal={false} />
               <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
               <YAxis type="category" dataKey="domain" width={90} tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
               <Tooltip content={<CustomTooltip />} />
@@ -252,11 +249,11 @@ const DashboardPage: React.FC = () => {
               <h3 className="dashboard__chart-title">Thread Depth</h3>
               <p className="dashboard__chart-sub">Reply distribution</p>
             </div>
-            <MessageSquare size={18} className="dashboard__chart-icon" />
+            <ChatBubbleBottomCenterTextIcon width={18} className="dashboard__chart-icon" />
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={threadData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#dee2e6" />
               <XAxis dataKey="depth" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
               <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
               <Tooltip content={<CustomTooltip />} />
@@ -273,7 +270,7 @@ const DashboardPage: React.FC = () => {
             <h3 className="dashboard__chart-title">Activity Heatmap</h3>
             <p className="dashboard__chart-sub">Emails by hour × day of week</p>
           </div>
-          <Activity size={18} className="dashboard__chart-icon" />
+          <ChartBarSquareIcon width={18} className="dashboard__chart-icon" />
         </div>
         <div className="heatmap">
           <div className="heatmap__y-labels">
