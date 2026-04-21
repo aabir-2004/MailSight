@@ -56,8 +56,23 @@ class AnalyticsSummary(BaseModel):
 
 
 def _get_emails(user_id: str):
-    res = supabase.table("emails").select("id, date, is_read, is_starred, sender_email").eq("user_id", user_id).limit(10000).execute()
-    return res.data or []
+    rows = []
+    batch_size = 1000
+    offset = 0
+    while True:
+        res = (
+            supabase.table("emails")
+            .select("id, date, is_read, is_starred, sender_email")
+            .eq("user_id", user_id)
+            .range(offset, offset + batch_size - 1)
+            .execute()
+        )
+        batch = res.data or []
+        rows.extend(batch)
+        if len(batch) < batch_size:
+            break
+        offset += batch_size
+    return rows
 
 
 @router.get("/summary", response_model=AnalyticsSummary)

@@ -39,15 +39,53 @@ def _compact_rows(rows: list[dict[str, Any]], key_name: str, max_rows: int = 12)
     return compact
 
 
-def _build_context(user_id: str) -> dict[str, Any]:
-    emails = (
-        supabase.table("emails")
-        .select("date, is_read, is_starred, sender_email, sender_name")
+def _fetch_all_rows(
+    table: str,
+    select_cols: str,
+    *,
+    user_id: Optional[str] = None,
+    in_filter: Optional[tuple[str, list[Any]]] = None,
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    batch_size = 1000
+    offset = 0
+    while True:
+        query = supabase.table(table).select(select_cols).range(offset, offset + batch_size - 1)
+        if user_id is not None:
+            query = query.eq("user_id", user_id)
+        if in_filter is not None:
+            field, values = in_filter
+            query = query.in_(field, values)
+        response = query.execute()
+        batch = response.data or []
+        rows.extend(batch)
+        if len(batch) < batch_size:
+            break
+        offset += batch_size
+    return rows
+
+
+def _sync_data_marker(user_id: str) -> str:
+    row = (
+        supabase.table("sync_state")
+        .select("last_synced_at,emails_synced,history_id")
         .eq("user_id", user_id)
-        .limit(10000)
+        .limit(1)
         .execute()
         .data
         or []
+    )
+    if not row:
+        return "no-sync"
+    sync = row[0]
+    return f"{sync.get('last_synced_at') or ''}:{sync.get('emails_synced') or 0}:{sync.get('history_id') or ''}"
+
+
+def _build_context(user_id: str) -> dict[str, Any]:
+    emails = _fetch_all_rows(
+        "emails",
+        "date, is_read, is_starred, sender_email, sender_name",
+        user_id=user_id,
     )
     if not emails:
         raise HTTPException(
@@ -127,15 +165,7 @@ def _build_context(user_id: str) -> dict[str, Any]:
     label_ids = [label["id"] for label in labels if label.get("id")]
     if label_ids:
         label_map = {label["id"]: label.get("name") or "Unknown" for label in labels if label.get("id")}
-        label_usage = (
-            supabase.table("email_labels")
-            .select("label_id")
-            .in_("label_id", label_ids)
-            .limit(10000)
-            .execute()
-            .data
-            or []
-        )
+        label_usage = _fetch_all_rows("email_labels", "label_id", in_filter=("label_id", label_ids))
         label_counts = Counter(row.get("label_id") for row in label_usage if row.get("label_id"))
         label_distribution = [
             {"label": label_map[label_id], "count": count}
@@ -234,7 +264,7 @@ async def generate_dynamic_analysis(user_id: str, query: str, preferred_chart_ty
     Generate a chart specification from real inbox aggregates.
     Cached per user/query to avoid unnecessary LLM calls.
     """
-    cache_key_raw = f"analysis:{user_id}:{query}:{preferred_chart_type or 'auto'}"
+    cache_key_raw = f"analysis:{user_id}:{query}:{preferred_chart_type or 'auto'}:{_sync_data_marker(user_id)}"
     cache_key = hashlib.md5(cache_key_raw.encode()).hexdigest()
 
     cached_spec = await get_cache(cache_key)
