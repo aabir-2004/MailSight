@@ -39,6 +39,8 @@ const Sidebar: React.FC = () => {
           <span className="sidebar__sync-text">
             {syncState.status === 'syncing'
               ? `Syncing… ${syncState.emails_synced}/${syncState.emails_total}`
+              : syncState.status === 'error'
+              ? 'Sync failed'
               : syncState.last_synced_at
               ? 'Up to date'
               : 'Not synced'}

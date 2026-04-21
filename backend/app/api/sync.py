@@ -28,7 +28,10 @@ def _first_row(response) -> dict | None:
 
 
 async def _run_sync_task(user_id: str, req: SyncRequest) -> None:
-    await sync_gmail_messages(user_id, date_from=req.date_from, date_to=req.date_to)
+    try:
+        await sync_gmail_messages(user_id, date_from=req.date_from, date_to=req.date_to)
+    except Exception as exc:
+        print(f"[Gmail Sync] Background task failed for user {user_id}: {exc}")
 
 
 @router.post("/start", summary="Trigger Gmail sync")
