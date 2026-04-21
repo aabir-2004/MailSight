@@ -41,6 +41,8 @@ const AppLayout: React.FC = () => {
         email: '',
         name: 'User',
         picture: '',
+        google_id: '',
+        created_at: new Date().toISOString(),
       });
       // Clean the URL so ?user_id= doesn't persist
       window.history.replaceState({}, '', window.location.pathname);
