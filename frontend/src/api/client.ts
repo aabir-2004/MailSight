@@ -34,7 +34,7 @@ apiClient.interceptors.response.use(
 );
 
 // ─── Mock helpers (used when backend is offline) ─────────────────────────────
-export const isMockMode = () => import.meta.env.VITE_MOCK_MODE === 'true' || !import.meta.env.VITE_API_URL;
+export const isMockMode = () => import.meta.env.VITE_MOCK_MODE === 'true';
 
 export function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
