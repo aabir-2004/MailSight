@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const rawBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '');
+const defaultBaseUrl = import.meta.env.DEV ? 'http://localhost:8000/api/v1' : '/api/v1';
+const rawBaseUrl = (import.meta.env.VITE_API_URL || defaultBaseUrl).replace(/\/$/, '');
 export const API_V1_BASE_URL = rawBaseUrl.endsWith('/api') ? `${rawBaseUrl}/v1` : rawBaseUrl;
 export const AUTH_GOOGLE_URL = `${API_V1_BASE_URL}/auth/google`;
 
@@ -32,10 +33,3 @@ apiClient.interceptors.response.use(
     return Promise.reject(err);
   }
 );
-
-// ─── Mock helpers (used when backend is offline) ─────────────────────────────
-export const isMockMode = () => import.meta.env.VITE_MOCK_MODE === 'true';
-
-export function delay(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
-}

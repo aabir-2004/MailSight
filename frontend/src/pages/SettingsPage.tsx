@@ -2,14 +2,14 @@ import React, { useEffect } from 'react';
 import { useAppStore } from '../store/appStore';
 import { ShieldCheckIcon, ArrowPathIcon, ArrowLeftOnRectangleIcon, MoonIcon, CircleStackIcon, KeyIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { triggerSync, fetchSyncStatus } from '../api/sync';
-import { AUTH_GOOGLE_URL, isMockMode } from '../api/client';
+import { AUTH_GOOGLE_URL } from '../api/client';
 import './SettingsPage.css';
 
 const SettingsPage: React.FC = () => {
   const { user, logout, globalDateRange, setGlobalDateRange, syncState, setSyncState, isAuthenticated } = useAppStore();
 
   useEffect(() => {
-    if (!isAuthenticated || isMockMode()) return;
+    if (!isAuthenticated) return;
 
     fetchSyncStatus()
       .then((st) => setSyncState(st))
@@ -17,22 +17,7 @@ const SettingsPage: React.FC = () => {
   }, [isAuthenticated, setSyncState]);
 
   const handleFullSync = async () => {
-    setSyncState({ status: 'syncing', emails_total: 0, emails_synced: 0 });
-
-    if (isMockMode()) {
-      let synced = 0;
-      const total = 2000 + Math.floor(Math.random() * 8000);
-      setSyncState({ emails_total: total });
-      const iv = setInterval(() => {
-        synced = Math.min(synced + Math.floor(Math.random() * 80 + 40), total);
-        setSyncState({ emails_synced: synced });
-        if (synced >= total) {
-          clearInterval(iv);
-          setSyncState({ status: 'done', last_synced_at: new Date().toISOString() });
-        }
-      }, 200);
-      return;
-    }
+    setSyncState({ status: 'syncing', phase: 'recent', emails_total: 0, emails_synced: 0, detail: 'Syncing recent mail…', backfill_complete: false });
 
     try {
       await triggerSync('smart', { date_from: globalDateRange.from, date_to: globalDateRange.to });

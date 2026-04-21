@@ -35,3 +35,4 @@ backend/celerybeat.pid
 *.log
 *.pid
 backend/deploy_hf.py
+.vercel

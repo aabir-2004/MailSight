@@ -14,6 +14,11 @@ export interface SyncState {
   emails_synced: number;
   last_synced_at: string | null;
   history_id?: string;
+  phase?: 'idle' | 'recent' | 'backfill' | 'incremental' | 'complete' | 'error' | string;
+  detail?: string | null;
+  oldest_synced_at?: string | null;
+  backfill_complete?: boolean | null;
+  backfill_cursor_end?: string | null;
 }
 
 // ─── Email ───────────────────────────────────────────────────────────────────

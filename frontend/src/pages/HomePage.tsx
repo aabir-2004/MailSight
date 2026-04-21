@@ -12,13 +12,6 @@ const QUICK_ACTIONS = [
   { id: 'go-analyse',   icon: <BeakerIcon width={20} />,          label: 'AI Analysis',     desc: 'Free-form custom queries',        page: 'analyse'   as const, color: 'green'  },
 ];
 
-const RECENT_INSIGHTS = [
-  { icon: <ArrowTrendingUpIcon width={14} />, text: 'Email volume up 12% this week vs last week', color: 'green' },
-  { icon: <EnvelopeIcon width={14} />,       text: 'You have 1,204 unread emails',               color: 'amber' },
-  { icon: <BoltIcon width={14} />,        text: 'GitHub is your busiest sender this month',   color: 'purple' },
-  { icon: <StarIcon width={14} />,       text: '87 starred emails worth reviewing',          color: 'blue'  },
-];
-
 const HomePage: React.FC = () => {
   const { setActivePage, user, isAuthenticated, syncState, setSyncState, globalDateRange } = useAppStore();
   const { data: summary } = useQuery({ queryKey: ['summary'], queryFn: fetchSummary, staleTime: 5 * 60 * 1000 });
@@ -28,8 +21,31 @@ const HomePage: React.FC = () => {
     return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : n.toString();
   };
 
+  const recentInsights = summary ? [
+    {
+      icon: <ArrowTrendingUpIcon width={14} />,
+      text: `${formatNum(summary.total_emails)} emails indexed across ${formatNum(summary.total_senders)} senders`,
+      color: 'green',
+    },
+    {
+      icon: <EnvelopeIcon width={14} />,
+      text: `${formatNum(summary.unread_count)} unread emails waiting`,
+      color: 'amber',
+    },
+    {
+      icon: <BoltIcon width={14} />,
+      text: `${summary.top_sender !== 'N/A' ? summary.top_sender : 'No sender data yet'} is your top sender`,
+      color: 'purple',
+    },
+    {
+      icon: <StarIcon width={14} />,
+      text: `${formatNum(summary.starred_count)} starred emails worth revisiting`,
+      color: 'blue',
+    },
+  ] : [];
+
   const handleSmartSync = async () => {
-    setSyncState({ status: 'syncing', emails_total: 0, emails_synced: 0 });
+    setSyncState({ status: 'syncing', phase: 'recent', emails_total: 0, emails_synced: 0, detail: 'Syncing recent mail…', backfill_complete: false });
     setActivePage('settings');
 
     try {
@@ -107,12 +123,19 @@ const HomePage: React.FC = () => {
       <div className="home__section">
         <h3 className="home__section-title">Latest Insights</h3>
         <div className="home__insights">
-          {RECENT_INSIGHTS.map((ins, i) => (
-            <div key={i} className="home__insight animate-fade-in" style={{ animationDelay: `${i * 80}ms` }}>
-              <span className="home__insight-icon">{ins.icon}</span>
-              <span>{ins.text}</span>
+          {recentInsights.length > 0 ? (
+            recentInsights.map((ins, i) => (
+              <div key={i} className="home__insight animate-fade-in" style={{ animationDelay: `${i * 80}ms` }}>
+                <span className="home__insight-icon">{ins.icon}</span>
+                <span>{ins.text}</span>
+              </div>
+            ))
+          ) : (
+            <div className="home__insight animate-fade-in">
+              <span className="home__insight-icon"><ArrowTrendingUpIcon width={14} /></span>
+              <span>Loading live inbox insights from your mailbox...</span>
             </div>
-          ))}
+          )}
         </div>
       </div>
 

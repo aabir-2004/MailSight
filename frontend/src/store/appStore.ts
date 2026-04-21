@@ -51,12 +51,12 @@ export const useAppStore = create<AppState>()(
         set({
           user: null,
           isAuthenticated: false,
-          syncState: { status: 'idle', emails_total: 0, emails_synced: 0, last_synced_at: null },
+          syncState: { status: 'idle', emails_total: 0, emails_synced: 0, last_synced_at: null, phase: 'idle', backfill_complete: null, detail: null, oldest_synced_at: null },
           activePage: 'home',
         }),
 
       // Sync
-      syncState: { status: 'idle', emails_total: 0, emails_synced: 0, last_synced_at: null },
+      syncState: { status: 'idle', emails_total: 0, emails_synced: 0, last_synced_at: null, phase: 'idle', backfill_complete: null, detail: null, oldest_synced_at: null },
       setSyncState: (s) => set((prev) => ({ syncState: { ...prev.syncState, ...s } })),
 
       // UI

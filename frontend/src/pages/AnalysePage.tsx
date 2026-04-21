@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import { runCustomQuery, fetchSavedQueries, saveQuery } from '../api/analyse';
 import type { CustomQueryResponse, ChartSpec } from '../types';
 import {
@@ -74,18 +75,41 @@ const AnalysePage: React.FC = () => {
   const [result, setResult] = useState<CustomQueryResponse | null>(null);
   const [saveName, setSaveName] = useState('');
   const [showSave, setShowSave] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const { data: saved = [] } = useQuery({ queryKey: ['savedQueries'], queryFn: fetchSavedQueries });
 
   const { mutate: submit, isPending } = useMutation({
     mutationFn: (q: string) => runCustomQuery(q),
-    onSuccess: (data) => { setResult(data); setSaveName(data.chart_spec.title); },
+    onSuccess: (data) => {
+      setError(null);
+      setResult(data);
+      setSaveName(data.chart_spec.title);
+    },
+    onError: (err) => {
+      setResult(null);
+      setShowSave(false);
+      const detail = axios.isAxiosError(err)
+        ? ((err.response?.data as { detail?: string } | undefined)?.detail ?? err.message)
+        : err instanceof Error
+          ? err.message
+          : 'Live analysis failed. Please check the backend configuration and try again.';
+      setError(detail);
+    },
   });
 
   const { mutate: doSave, isPending: saving } = useMutation({
     mutationFn: () => saveQuery(saveName, result!.query_text, result!.chart_spec),
     onSuccess: () => setShowSave(false),
   });
+
+  const handleSubmit = (q: string) => {
+    const trimmed = q.trim();
+    if (!trimmed) return;
+    setError(null);
+    setResult(null);
+    submit(trimmed);
+  };
 
   return (
     <div className="analyse-page animate-fade-in">
@@ -107,14 +131,14 @@ const AnalysePage: React.FC = () => {
             value={query}
             rows={4}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit(query.trim()); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit(query); }}
           />
           <div className="analyse-page__query-footer">
             <span className="analyse-page__hint">⌘↵ to submit</span>
             <button
               id="analyse-submit-btn"
               className={`analyse-page__submit ${isPending ? 'analyse-page__submit--loading' : ''}`}
-              onClick={() => { if (query.trim()) submit(query.trim()); }}
+              onClick={() => handleSubmit(query)}
               disabled={isPending || !query.trim()}
             >
               {isPending ? 'Generating…' : <><PaperAirplaneIcon width={14} /> Analyse</>}
@@ -140,7 +164,7 @@ const AnalysePage: React.FC = () => {
               <button
                 key={sq.id}
                 className="analyse-page__example-item"
-                onClick={() => { setQuery(sq.query_text); submit(sq.query_text); }}
+                onClick={() => { setQuery(sq.query_text); handleSubmit(sq.query_text); }}
               >
                 <ClockIcon width={13} /> {sq.name}
               </button>
@@ -151,6 +175,21 @@ const AnalysePage: React.FC = () => {
 
       {/* Right panel — output */}
       <div className="analyse-page__right">
+        {error && !isPending && (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: '12px 14px',
+              borderRadius: 12,
+              border: '1px solid rgba(244, 63, 94, 0.28)',
+              background: 'rgba(244, 63, 94, 0.08)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            <strong>Live analysis failed.</strong> {error}
+          </div>
+        )}
+
         {!result && !isPending && (
           <div className="analyse-page__empty">
             <div className="analyse-page__empty-icon animate-float">

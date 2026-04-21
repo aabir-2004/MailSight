@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api import auth, sync, search, analytics, analyse, queries
+from app.services.sync_orchestrator import resume_auto_backfills_from_db
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -33,3 +34,10 @@ app.include_router(queries.router,   prefix=API_PREFIX + "/queries",    tags=["Q
 @app.get("/health", tags=["Health"])
 async def health():
     return {"status": "ok", "version": "1.0.0"}
+
+
+@app.on_event("startup")
+async def startup_resume_backfills() -> None:
+    resumed = await resume_auto_backfills_from_db()
+    if resumed:
+        print(f"[Gmail Sync] Resumed auto-backfill workers for {resumed} users")

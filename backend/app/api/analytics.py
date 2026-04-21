@@ -1,7 +1,7 @@
 from __future__ import annotations
-from fastapi import APIRouter, Query, Depends, HTTPException
+from fastapi import APIRouter, Query, Depends
 from pydantic import BaseModel
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from collections import Counter, defaultdict
 
 from app.core.db import supabase
@@ -100,9 +100,42 @@ async def get_summary(user_id: str = Depends(get_current_user_id)):
         avg_emails = round(total_emails / delta_days, 1)
 
     top_sender = "N/A"
-    top_sender_res = supabase.table("senders").select("domain").eq("user_id", user_id).order("total_count", desc=True).limit(1).execute()
+    top_sender_res = (
+        supabase.table("senders")
+        .select("name,domain")
+        .eq("user_id", user_id)
+        .order("total_count", desc=True)
+        .limit(1)
+        .execute()
+    )
     if top_sender_res.data:
-        top_sender = top_sender_res.data[0].get("domain") or "N/A"
+        row = top_sender_res.data[0]
+        top_sender = row.get("name") or row.get("domain") or "N/A"
+
+    top_label = "N/A"
+    label_rows = (
+        supabase.table("labels")
+        .select("id,name")
+        .eq("user_id", user_id)
+        .limit(1000)
+        .execute()
+        .data
+        or []
+    )
+    if label_rows:
+        label_map = {row["id"]: row.get("name") or "N/A" for row in label_rows if row.get("id")}
+        if label_map:
+            label_usage = (
+                supabase.table("email_labels")
+                .select("label_id")
+                .in_("label_id", list(label_map.keys()))
+                .execute()
+                .data
+                or []
+            )
+            label_counts = Counter(row.get("label_id") for row in label_usage if row.get("label_id"))
+            if label_counts:
+                top_label = label_map[label_counts.most_common(1)[0][0]]
 
     return AnalyticsSummary(
         total_emails=total_emails,
@@ -112,7 +145,7 @@ async def get_summary(user_id: str = Depends(get_current_user_id)):
         avg_emails_per_day=avg_emails,
         busiest_day=busiest_day,
         busiest_hour=busiest_hour,
-        top_label="INBOX",
+        top_label=top_label,
         top_sender=top_sender,
         unread_count=unread_count,
         starred_count=starred_count,

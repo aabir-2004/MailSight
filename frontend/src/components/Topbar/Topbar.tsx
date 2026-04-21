@@ -2,7 +2,6 @@ import React from 'react';
 import { BellIcon, ArrowPathIcon, UserIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useAppStore } from '../../store/appStore';
 import { triggerSync, fetchSyncStatus } from '../../api/sync';
-import { isMockMode } from '../../api/client';
 import './Topbar.css';
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
@@ -18,23 +17,7 @@ const Topbar: React.FC = () => {
   const { title, subtitle } = PAGE_TITLES[activePage] || PAGE_TITLES.home;
 
   const handleSync = async () => {
-    setSyncState({ status: 'syncing', emails_total: 0, emails_synced: 0 });
-
-    if (isMockMode()) {
-      // Simulate sync progress
-      let synced = 0;
-      const total = 250 + Math.floor(Math.random() * 200);
-      setSyncState({ emails_total: total });
-      const iv = setInterval(() => {
-        synced = Math.min(synced + Math.floor(Math.random() * 30 + 10), total);
-        setSyncState({ emails_synced: synced });
-        if (synced >= total) {
-          clearInterval(iv);
-          setSyncState({ status: 'done', last_synced_at: new Date().toISOString() });
-        }
-      }, 300);
-      return;
-    }
+    setSyncState({ status: 'syncing', phase: 'incremental', emails_total: 0, emails_synced: 0, detail: 'Syncing latest mail…', backfill_complete: false });
 
     try {
       await triggerSync('incremental');

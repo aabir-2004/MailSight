@@ -25,11 +25,12 @@ async def auth_google():
 
 
 import httpx
+from typing import Optional
 from app.core.db import supabase
 from app.core.security import encrypt_token
 
 @router.get("/callback", summary="Handle OAuth callback")
-async def auth_callback(code: str, state: str | None = None):
+async def auth_callback(code: str, state: Optional[str] = None):
     if not code:
         raise HTTPException(status_code=400, detail="Missing authorization code")
         

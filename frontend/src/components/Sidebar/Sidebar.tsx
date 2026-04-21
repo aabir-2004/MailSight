@@ -14,6 +14,16 @@ const NAV_ITEMS: { id: Page; icon: React.ReactNode; label: string; badge?: strin
 
 const Sidebar: React.FC = () => {
   const { activePage, setActivePage, sidebarCollapsed, toggleSidebar, syncState } = useAppStore();
+  const syncStatusText =
+    syncState.status === 'syncing'
+      ? syncState.detail || `Syncing… ${syncState.emails_synced}/${syncState.emails_total}`
+      : syncState.status === 'error'
+        ? 'Sync failed'
+        : syncState.last_synced_at
+          ? syncState.backfill_complete === false
+            ? 'Recent mail synced'
+            : 'Up to date'
+          : 'Not synced';
 
   return (
     <aside className={`sidebar ${sidebarCollapsed ? 'sidebar--collapsed' : ''}`}>
@@ -36,15 +46,7 @@ const Sidebar: React.FC = () => {
       {!sidebarCollapsed && (
         <div className="sidebar__sync-status">
           <div className={`sidebar__sync-dot ${syncState.status === 'syncing' ? 'sidebar__sync-dot--active' : ''}`} />
-          <span className="sidebar__sync-text">
-            {syncState.status === 'syncing'
-              ? `Syncing… ${syncState.emails_synced}/${syncState.emails_total}`
-              : syncState.status === 'error'
-              ? 'Sync failed'
-              : syncState.last_synced_at
-              ? 'Up to date'
-              : 'Not synced'}
-          </span>
+          <span className="sidebar__sync-text">{syncStatusText}</span>
         </div>
       )}
 

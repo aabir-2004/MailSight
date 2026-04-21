@@ -1,7 +1,7 @@
 from __future__ import annotations
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from typing import Any
+from typing import Any, Optional, List
 from app.core.security import get_current_user_id
 from app.services.search_service import perform_rag_search
 
@@ -9,15 +9,15 @@ router = APIRouter()
 
 
 class SearchFilters(BaseModel):
-    labels: list[str] | None = None
-    senders: list[str] | None = None
-    date_from: str | None = None
-    date_to: str | None = None
+    labels: Optional[List[str]] = None
+    senders: Optional[List[str]] = None
+    date_from: Optional[str] = None
+    date_to: Optional[str] = None
 
 
 class SearchRequest(BaseModel):
     query: str
-    filters: SearchFilters | None = None
+    filters: Optional[SearchFilters] = None
     top_k: int = 10
 
 
@@ -28,8 +28,8 @@ class EmailCard(BaseModel):
     sender_name: str
     snippet: str
     date: str
-    labels: list[str]
-    relevance_score: float | None = None
+    labels: List[str]
+    relevance_score: Optional[float] = None
 
 
 class SearchResponse(BaseModel):

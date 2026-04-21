@@ -5,6 +5,7 @@ from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from cryptography.fernet import Fernet
 from app.core.config import settings
+from typing import Optional
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -33,7 +34,7 @@ def decrypt_token(encrypted_token: str) -> str:
 
 
 def get_current_user_id(
-    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
 ) -> str:
     if not credentials or not credentials.credentials:
         raise HTTPException(status_code=401, detail="Missing bearer token")

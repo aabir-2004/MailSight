@@ -1,9 +1,10 @@
 from __future__ import annotations
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 import time
 from app.services.analyse_service import generate_dynamic_analysis
+from app.core.security import get_current_user_id
 
 router = APIRouter()
 
@@ -13,14 +14,14 @@ ChartType = Literal["bar", "line", "pie", "scatter", "heatmap", "table"]
 class ChartSpec(BaseModel):
     type: ChartType
     title: str
-    x_label: str | None = None
-    y_label: str | None = None
+    x_label: Optional[str] = None
+    y_label: Optional[str] = None
     data: list[dict[str, Any]]
 
 
 class CustomQueryRequest(BaseModel):
     query: str
-    preferred_chart_type: ChartType | None = None
+    preferred_chart_type: Optional[ChartType] = None
 
 
 class CustomQueryResponse(BaseModel):
@@ -31,14 +32,17 @@ class CustomQueryResponse(BaseModel):
 
 
 @router.post("/analyse/custom", response_model=CustomQueryResponse)
-async def custom_analyse(req: CustomQueryRequest):
+async def custom_analyse(
+    req: CustomQueryRequest,
+    user_id: str = Depends(get_current_user_id),
+):
     """
     Pass user query + DB schema description to Groq mixtral-8x7b
     Returns dynamically constructed Recharts JSON schema
     """
     start_time = time.time()
     
-    analysis_data = await generate_dynamic_analysis(req.query, req.preferred_chart_type)
+    analysis_data = await generate_dynamic_analysis(user_id, req.query, req.preferred_chart_type)
     
     query_time_ms = int((time.time() - start_time) * 1000)
     
