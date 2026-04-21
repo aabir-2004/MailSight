@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAppStore } from './store/appStore';
 import Sidebar from './components/Sidebar/Sidebar';
@@ -28,7 +28,24 @@ const PageSkeleton: React.FC = () => (
 );
 
 const AppLayout: React.FC = () => {
-  const { activePage, sidebarCollapsed, isAuthenticated } = useAppStore();
+  const { activePage, sidebarCollapsed, isAuthenticated, setUser } = useAppStore();
+
+  // Handle OAuth callback: parse ?user_id= from URL after Google login redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get('user_id');
+    if (userId && !isAuthenticated) {
+      // Set user as authenticated with the returned ID
+      setUser({
+        id: userId,
+        email: '',
+        name: 'User',
+        picture: '',
+      });
+      // Clean the URL so ?user_id= doesn't persist
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   if (!isAuthenticated) {
     return (

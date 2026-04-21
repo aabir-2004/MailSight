@@ -34,3 +34,4 @@ backend/celerybeat.pid
 # ─── Misc ────────────────────────────────────────────────────────────────────
 *.log
 *.pid
+backend/deploy_hf.py
