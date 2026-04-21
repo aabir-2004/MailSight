@@ -1,7 +1,12 @@
 import base64
 import os
+from uuid import UUID
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from cryptography.fernet import Fernet
 from app.core.config import settings
+
+bearer_scheme = HTTPBearer(auto_error=False)
 
 # Ensure SECRET_KEY is valid for Fernet (32 url-safe base64-encoded bytes)
 def _get_fernet() -> Fernet:
@@ -25,3 +30,18 @@ def decrypt_token(encrypted_token: str) -> str:
     if not encrypted_token:
         return ""
     return _fernet.decrypt(encrypted_token.encode("utf-8")).decode("utf-8")
+
+
+def get_current_user_id(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+) -> str:
+    if not credentials or not credentials.credentials:
+        raise HTTPException(status_code=401, detail="Missing bearer token")
+
+    token = credentials.credentials
+    try:
+        UUID(token)
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid bearer token")
+
+    return token

@@ -34,6 +34,31 @@ async def perform_rag_search(query: str, user_id: str, top_k: int = 10) -> dict:
         print(f"[RAG Error] RPC failed: {e}. Falling back to empty contexts.")
         results = []
 
+    if not results:
+        try:
+            recent_res = (
+                supabase.table("emails")
+                .select("id,subject,snippet,sender_email,sender_name,date,body_text")
+                .eq("user_id", user_id)
+                .order("date", desc=True)
+                .limit(250)
+                .execute()
+            )
+            query_lower = query.lower()
+            candidates = recent_res.data or []
+            matched = [
+                email
+                for email in candidates
+                if query_lower in " ".join(
+                    str(email.get(field) or "")
+                    for field in ("subject", "snippet", "sender_email", "sender_name", "body_text")
+                ).lower()
+            ]
+            results = (matched or candidates)[:top_k]
+        except Exception as e:
+            print(f"[Search Fallback Error] {e}")
+            results = []
+
     # Format documents for Groq
     context_docs = []
     sources = []

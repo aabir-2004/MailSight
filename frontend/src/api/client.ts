@@ -1,9 +1,11 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+const rawBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '');
+export const API_V1_BASE_URL = rawBaseUrl.endsWith('/api') ? `${rawBaseUrl}/v1` : rawBaseUrl;
+export const AUTH_GOOGLE_URL = `${API_V1_BASE_URL}/auth/google`;
 
 export const apiClient = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_V1_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
   timeout: 30_000,
 });

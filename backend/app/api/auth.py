@@ -2,6 +2,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 from app.core.config import settings
+from urllib.parse import urlencode
 
 router = APIRouter()
 
@@ -20,8 +21,7 @@ async def auth_google():
         "access_type": "offline",
         "prompt": "consent",
     }
-    query = "&".join(f"{k}={v}" for k, v in params.items())
-    return RedirectResponse(url=f"{GOOGLE_AUTH_URL}?{query}")
+    return RedirectResponse(url=f"{GOOGLE_AUTH_URL}?{urlencode(params)}")
 
 
 import httpx
@@ -83,4 +83,3 @@ async def auth_callback(code: str, state: str | None = None):
         # Redirect back to the frontend dashboard, you could pass session ID or JWT here
         # For this prototype, we'll redirect back to localhost:5173/ with the db id
         return RedirectResponse(f"{settings.FRONTEND_URL}/?user_id={user_db_id}")
-

@@ -1,7 +1,8 @@
 from __future__ import annotations
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import Any
+from app.core.security import get_current_user_id
 from app.services.search_service import perform_rag_search
 
 router = APIRouter()
@@ -38,7 +39,7 @@ class SearchResponse(BaseModel):
 
 
 @router.post("/search", response_model=SearchResponse, summary="Hybrid semantic + keyword search")
-async def search_emails(req: SearchRequest):
+async def search_emails(req: SearchRequest, user_id: str = Depends(get_current_user_id)):
     """
     1. Embed query with sentence-transformers
     2. ANN search over pgvector (semantic)
@@ -46,11 +47,7 @@ async def search_emails(req: SearchRequest):
     4. RRF fusion → top-k
     5. Groq LLM synthesis → grounded answer
     """
-    # Using a dummy user_id since auth isn't fully passed in this route yet.
-    # In a full deployment, `user_id` should come from `Depends(get_current_user)`
-    dummy_user_id = "00000000-0000-0000-0000-000000000000"
-    
-    result = await perform_rag_search(req.query, dummy_user_id, req.top_k)
+    result = await perform_rag_search(req.query, user_id, req.top_k)
     
     return SearchResponse(
         answer=result['answer'],

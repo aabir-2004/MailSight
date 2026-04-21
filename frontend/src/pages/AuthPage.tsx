@@ -1,10 +1,10 @@
 import React from 'react';
+import { AUTH_GOOGLE_URL } from '../api/client';
 import './AuthPage.css';
 
 const AuthPage: React.FC = () => {
   const handleGoogleLogin = () => {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-    window.location.href = `${baseUrl}/v1/auth/google`;
+    window.location.href = AUTH_GOOGLE_URL;
   };
 
   return (

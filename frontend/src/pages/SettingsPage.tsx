@@ -2,7 +2,7 @@ import React from 'react';
 import { useAppStore } from '../store/appStore';
 import { ShieldCheckIcon, ArrowPathIcon, TrashIcon, MoonIcon, CircleStackIcon, KeyIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { triggerSync, fetchSyncStatus } from '../api/sync';
-import { isMockMode } from '../api/client';
+import { AUTH_GOOGLE_URL, isMockMode } from '../api/client';
 import './SettingsPage.css';
 
 const SettingsPage: React.FC = () => {
@@ -68,8 +68,7 @@ const SettingsPage: React.FC = () => {
               id="settings-connect-btn" 
               onClick={() => {
                 if (!isAuthenticated) {
-                  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-                  window.location.href = `${baseUrl}/v1/auth/google`;
+                  window.location.href = AUTH_GOOGLE_URL;
                 }
               }}
               disabled={isAuthenticated}
