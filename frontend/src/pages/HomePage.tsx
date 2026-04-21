@@ -3,6 +3,7 @@ import { MagnifyingGlassIcon, Squares2X2Icon, BeakerIcon, ArrowTrendingUpIcon, E
 import { useAppStore } from '../store/appStore';
 import { useQuery } from '@tanstack/react-query';
 import { fetchSummary } from '../api/analytics';
+import { fetchSyncStatus, triggerSync } from '../api/sync';
 import './HomePage.css';
 
 const QUICK_ACTIONS = [
@@ -19,12 +20,35 @@ const RECENT_INSIGHTS = [
 ];
 
 const HomePage: React.FC = () => {
-  const { setActivePage, user, isAuthenticated, syncState, setSyncState } = useAppStore();
+  const { setActivePage, user, isAuthenticated, syncState, setSyncState, globalDateRange } = useAppStore();
   const { data: summary } = useQuery({ queryKey: ['summary'], queryFn: fetchSummary, staleTime: 5 * 60 * 1000 });
 
   const formatNum = (n?: number) => {
     if (n === undefined) return '—';
     return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : n.toString();
+  };
+
+  const handleSmartSync = async () => {
+    setSyncState({ status: 'syncing', emails_total: 0, emails_synced: 0 });
+    setActivePage('settings');
+
+    try {
+      await triggerSync('smart', { date_from: globalDateRange.from, date_to: globalDateRange.to });
+      const iv = window.setInterval(async () => {
+        try {
+          const st = await fetchSyncStatus();
+          setSyncState(st);
+          if (st.status === 'done' || st.status === 'error') {
+            window.clearInterval(iv);
+          }
+        } catch {
+          window.clearInterval(iv);
+          setSyncState({ status: 'error' });
+        }
+      }, 2000);
+    } catch {
+      setSyncState({ status: 'error' });
+    }
   };
 
   return (
@@ -125,12 +149,7 @@ const HomePage: React.FC = () => {
             className="home__sync-cta-btn" 
             id="home-start-sync-btn" 
             style={{ background: '#38bdf8', color: '#0f172a' }} 
-            onClick={async () => {
-              setSyncState({ status: 'syncing' });
-              setActivePage('settings');
-              // The backend will now handle the "smart" prioritisation automatically if triggered via Settings, 
-              // or we could dispatch it from here but relying on Settings UI is fine.
-            }}
+            onClick={handleSmartSync}
           >
             Smart Sync <ArrowRightIcon width={15} />
           </button>
