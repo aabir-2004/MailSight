@@ -1,7 +1,11 @@
 from __future__ import annotations
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends, HTTPException
 from pydantic import BaseModel
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
+from collections import Counter, defaultdict
+
+from app.core.db import supabase
+from app.core.security import get_current_user_id
 
 router = APIRouter()
 
@@ -51,28 +55,95 @@ class AnalyticsSummary(BaseModel):
     starred_count: int
 
 
+def _get_emails(user_id: str):
+    res = supabase.table("emails").select("id, date, is_read, is_starred, sender_email").eq("user_id", user_id).limit(10000).execute()
+    return res.data or []
+
+
 @router.get("/summary", response_model=AnalyticsSummary)
-async def get_summary():
+async def get_summary(user_id: str = Depends(get_current_user_id)):
+    emails = _get_emails(user_id)
+    senders_res = supabase.table("senders").select("id").eq("user_id", user_id).limit(10000).execute()
+    labels_res = supabase.table("labels").select("id").eq("user_id", user_id).limit(1000).execute()
+    threads_res = supabase.table("threads").select("id").eq("user_id", user_id).limit(10000).execute()
+
+    total_emails = len(emails)
+    total_senders = len(senders_res.data or [])
+    total_labels = len(labels_res.data or [])
+    total_threads = len(threads_res.data or [])
+
+    unread_count = sum(1 for e in emails if e.get("is_read") is False)
+    starred_count = sum(1 for e in emails if e.get("is_starred") is True)
+
+    days = Counter()
+    hours = Counter()
+    dates = []
+
+    for e in emails:
+        d_str = e.get("date")
+        if not d_str:
+            continue
+        try:
+            dt = datetime.fromisoformat(d_str.replace("Z", "+00:00"))
+            days[dt.strftime("%A")] += 1
+            hours[dt.hour] += 1
+            dates.append(dt)
+        except ValueError:
+            pass
+
+    busiest_day = days.most_common(1)[0][0] if days else "N/A"
+    busiest_hour = hours.most_common(1)[0][0] if hours else 0
+
+    avg_emails = 0.0
+    if dates:
+        delta_days = max(1, (max(dates) - min(dates)).days)
+        avg_emails = round(total_emails / delta_days, 1)
+
+    top_sender = "N/A"
+    top_sender_res = supabase.table("senders").select("domain").eq("user_id", user_id).order("total_count", desc=True).limit(1).execute()
+    if top_sender_res.data:
+        top_sender = top_sender_res.data[0].get("domain") or "N/A"
+
     return AnalyticsSummary(
-        total_emails=12847, total_senders=438, total_labels=24,
-        total_threads=3211, avg_emails_per_day=35.2, busiest_day="Tuesday",
-        busiest_hour=10, top_label="INBOX", top_sender="github.com",
-        unread_count=1204, starred_count=87,
+        total_emails=total_emails,
+        total_senders=total_senders,
+        total_labels=total_labels,
+        total_threads=total_threads,
+        avg_emails_per_day=avg_emails,
+        busiest_day=busiest_day,
+        busiest_hour=busiest_hour,
+        top_label="INBOX",
+        top_sender=top_sender,
+        unread_count=unread_count,
+        starred_count=starred_count,
     )
 
 
 @router.get("/labels", response_model=list[LabelFrequency])
 async def get_label_frequency(
-    date_from: str = Query(default=str(date.today().replace(month=1, day=1))),
-    date_to: str = Query(default=str(date.today())),
+    date_from: str = Query(default=""),
+    date_to: str = Query(default=""),
+    user_id: str = Depends(get_current_user_id),
 ):
-    return [
-        LabelFrequency(label="INBOX",      count=5420, percentage=42.2),
-        LabelFrequency(label="Promotions", count=3180, percentage=24.8),
-        LabelFrequency(label="Social",     count=1840, percentage=14.3),
-        LabelFrequency(label="Updates",    count=1120, percentage=8.7),
-        LabelFrequency(label="Important",  count=720,  percentage=5.6),
-    ]
+    labels = supabase.table("labels").select("id, name").eq("user_id", user_id).execute().data or []
+    if not labels:
+        return []
+
+    label_map = {l["id"]: l["name"] for l in labels}
+    label_ids = list(label_map.keys())
+
+    res = supabase.table("email_labels").select("label_id").in_("label_id", label_ids).execute().data or []
+    counts = Counter(el.get("label_id") for el in res)
+
+    total = sum(counts.values()) or 1
+    freqs = []
+    for lid, count in counts.most_common(10):
+        freqs.append(LabelFrequency(
+            label=label_map[lid],
+            count=count,
+            percentage=round((count / total) * 100, 1)
+        ))
+    return freqs
 
 
 @router.get("/volume", response_model=list[VolumeDataPoint])
@@ -80,46 +151,91 @@ async def get_volume(
     date_from: str = Query(default=""),
     date_to: str = Query(default=""),
     granularity: str = Query(default="day"),
+    user_id: str = Depends(get_current_user_id),
 ):
-    import random
-    from datetime import datetime, timedelta
+    emails = _get_emails(user_id)
+    counts = Counter()
+    for e in emails:
+        d_str = e.get("date")
+        if not d_str:
+            continue
+        try:
+            dt = datetime.fromisoformat(d_str.replace("Z", "+00:00"))
+            counts[dt.strftime("%Y-%m-%d")] += 1
+        except Exception:
+            pass
+
     start = datetime.strptime(date_from, "%Y-%m-%d") if date_from else datetime.now() - timedelta(days=30)
-    end   = datetime.strptime(date_to,   "%Y-%m-%d") if date_to   else datetime.now()
-    delta = (end - start).days
-    return [
-        VolumeDataPoint(date=(start + timedelta(days=i)).strftime("%Y-%m-%d"), count=random.randint(20, 80))
-        for i in range(max(delta, 1))
-    ]
+    end = datetime.strptime(date_to, "%Y-%m-%d") if date_to else datetime.now()
+    delta = max(1, (end - start).days)
+
+    res = []
+    for i in range(delta + 1):
+        d = (start + timedelta(days=i)).strftime("%Y-%m-%d")
+        res.append(VolumeDataPoint(date=d, count=counts.get(d, 0)))
+    return res
 
 
 @router.get("/senders", response_model=list[SenderStat])
-async def get_top_senders(limit: int = Query(default=10)):
-    senders = [
-        SenderStat(sender_email="notifications@github.com", sender_name="GitHub",       domain="github.com",       count=1240, first_seen="2024-01-01", last_seen="2025-04-20"),
-        SenderStat(sender_email="newsletter@producthunt.com", sender_name="Product Hunt", domain="producthunt.com", count=890,  first_seen="2024-02-10", last_seen="2025-04-18"),
-        SenderStat(sender_email="team@notion.so",           sender_name="Notion",        domain="notion.so",       count=670,  first_seen="2024-03-05", last_seen="2025-04-15"),
+async def get_top_senders(limit: int = Query(default=10), user_id: str = Depends(get_current_user_id)):
+    senders = supabase.table("senders").select("email, name, domain, total_count, first_seen, last_seen").eq("user_id", user_id).order("total_count", desc=True).limit(limit).execute().data or []
+    return [
+        SenderStat(
+            sender_email=s.get("email", ""),
+            sender_name=s.get("name", ""),
+            domain=s.get("domain", ""),
+            count=s.get("total_count", 0),
+            first_seen=s.get("first_seen") or "",
+            last_seen=s.get("last_seen") or "",
+        ) for s in senders
     ]
-    return senders[:limit]
 
 
 @router.get("/heatmap", response_model=list[HeatmapCell])
-async def get_heatmap(date_from: str = Query(default=""), date_to: str = Query(default="")):
-    import random
+async def get_heatmap(
+    date_from: str = Query(default=""),
+    date_to: str = Query(default=""),
+    user_id: str = Depends(get_current_user_id),
+):
+    emails = _get_emails(user_id)
+    heatmap = defaultdict(int)
+    for e in emails:
+        d_str = e.get("date")
+        if not d_str:
+            continue
+        try:
+            dt = datetime.fromisoformat(d_str.replace("Z", "+00:00"))
+            day = (dt.weekday() + 1) % 7
+            heatmap[(day, dt.hour)] += 1
+        except Exception:
+            pass
+
     cells = []
     for day in range(7):
         for hour in range(24):
-            isWorkHour = 9 <= hour <= 18
-            base = 30 if day < 5 and isWorkHour else 5
-            cells.append(HeatmapCell(day=day, hour=hour, count=random.randint(base, base + 40)))
+            cells.append(HeatmapCell(day=day, hour=hour, count=heatmap[(day, hour)]))
     return cells
 
 
 @router.get("/threads", response_model=list[ThreadDepthBin])
-async def get_threads(date_from: str = Query(default=""), date_to: str = Query(default="")):
-    return [
-        ThreadDepthBin(depth="1",    count=1240),
-        ThreadDepthBin(depth="2–3",  count=980),
-        ThreadDepthBin(depth="4–6",  count=540),
-        ThreadDepthBin(depth="7–10", count=280),
-        ThreadDepthBin(depth="11+",  count=171),
-    ]
+async def get_threads(
+    date_from: str = Query(default=""),
+    date_to: str = Query(default=""),
+    user_id: str = Depends(get_current_user_id),
+):
+    threads = supabase.table("threads").select("message_count").eq("user_id", user_id).execute().data or []
+    bins = {"1": 0, "2–3": 0, "4–6": 0, "7–10": 0, "11+": 0}
+    for t in threads:
+        c = t.get("message_count", 1)
+        if c == 1:
+            bins["1"] += 1
+        elif 2 <= c <= 3:
+            bins["2–3"] += 1
+        elif 4 <= c <= 6:
+            bins["4–6"] += 1
+        elif 7 <= c <= 10:
+            bins["7–10"] += 1
+        else:
+            bins["11+"] += 1
+
+    return [ThreadDepthBin(depth=k, count=v) for k, v in bins.items()]
