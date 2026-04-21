@@ -42,7 +42,7 @@ const Topbar: React.FC = () => {
         try {
           const st = await fetchSyncStatus();
           setSyncState(st);
-          if (st.status === 'done' || st.status === 'error' || st.status === 'failed') {
+          if (st.status === 'done' || st.status === 'error') {
             clearInterval(iv);
           }
         } catch (err) {

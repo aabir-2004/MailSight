@@ -6,7 +6,7 @@ import { isMockMode } from '../api/client';
 import './SettingsPage.css';
 
 const SettingsPage: React.FC = () => {
-  const { user, logout, globalDateRange, setGlobalDateRange, setSyncState } = useAppStore();
+  const { user, logout, globalDateRange, setGlobalDateRange, syncState, setSyncState } = useAppStore();
 
   const handleFullSync = async () => {
     setSyncState({ status: 'syncing', emails_total: 0, emails_synced: 0 });
@@ -32,7 +32,7 @@ const SettingsPage: React.FC = () => {
         try {
           const st = await fetchSyncStatus();
           setSyncState(st);
-          if (st.status === 'done' || st.status === 'error' || st.status === 'failed') {
+          if (st.status === 'done' || st.status === 'error') {
             clearInterval(iv);
           }
         } catch (err) {
