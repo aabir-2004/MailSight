@@ -6,7 +6,7 @@ import { isMockMode } from '../api/client';
 import './SettingsPage.css';
 
 const SettingsPage: React.FC = () => {
-  const { user, logout, globalDateRange, setGlobalDateRange, syncState, setSyncState } = useAppStore();
+  const { user, logout, globalDateRange, setGlobalDateRange, syncState, setSyncState, isAuthenticated } = useAppStore();
 
   const handleFullSync = async () => {
     setSyncState({ status: 'syncing', emails_total: 0, emails_synced: 0 });
@@ -63,11 +63,18 @@ const SettingsPage: React.FC = () => {
               <div className="settings__profile-name">{user?.name ?? 'Not connected'}</div>
               <div className="settings__profile-email">{user?.email ?? 'Connect Gmail to get started'}</div>
             </div>
-            <button className="settings__btn settings__btn--ghost" id="settings-connect-btn" onClick={() => {
-              const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-              window.location.href = `${baseUrl}/v1/auth/google`;
-            }}>
-              Connect Gmail <ChevronRightIcon width={14} />
+            <button 
+              className={`settings__btn ${isAuthenticated ? 'bg-gray-800 text-gray-400 cursor-default' : 'settings__btn--ghost'}`} 
+              id="settings-connect-btn" 
+              onClick={() => {
+                if (!isAuthenticated) {
+                  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+                  window.location.href = `${baseUrl}/v1/auth/google`;
+                }
+              }}
+              disabled={isAuthenticated}
+            >
+              {isAuthenticated ? 'Connected' : <>Connect Gmail <ChevronRightIcon width={14} /></>}
             </button>
           </div>
         </div>

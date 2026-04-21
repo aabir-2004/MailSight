@@ -19,7 +19,7 @@ const RECENT_INSIGHTS = [
 ];
 
 const HomePage: React.FC = () => {
-  const { setActivePage, user } = useAppStore();
+  const { setActivePage, user, isAuthenticated, syncState, setSyncState } = useAppStore();
   const { data: summary } = useQuery({ queryKey: ['summary'], queryFn: fetchSummary, staleTime: 5 * 60 * 1000 });
 
   const formatNum = (n?: number) => {
@@ -93,20 +93,48 @@ const HomePage: React.FC = () => {
       </div>
 
       {/* Sync CTA */}
-      <div className="home__sync-cta glass-card" id="home-sync-cta">
-        <div className="home__sync-cta-left">
-          <div className="home__sync-cta-icon">
-            <EnvelopeIcon width={22} />
+      {!isAuthenticated && (
+        <div className="home__sync-cta glass-card" id="home-sync-cta">
+          <div className="home__sync-cta-left">
+            <div className="home__sync-cta-icon">
+              <EnvelopeIcon width={22} />
+            </div>
+            <div>
+              <div className="home__sync-cta-title">Connect your Gmail</div>
+              <div className="home__sync-cta-sub">Authenticate with Google to start ingesting your inbox. Read-only access — your data stays private.</div>
+            </div>
           </div>
-          <div>
-            <div className="home__sync-cta-title">Connect your Gmail</div>
-            <div className="home__sync-cta-sub">Authenticate with Google to start ingesting your inbox. Read-only access — your data stays private.</div>
-          </div>
+          <button className="home__sync-cta-btn" id="home-connect-gmail-btn" onClick={() => setActivePage('settings')}>
+            Connect Gmail <ArrowRightIcon width={15} />
+          </button>
         </div>
-        <button className="home__sync-cta-btn" id="home-connect-gmail-btn" onClick={() => setActivePage('settings')}>
-          Connect Gmail <ArrowRightIcon width={15} />
-        </button>
-      </div>
+      )}
+
+      {isAuthenticated && syncState.status !== 'syncing' && syncState.emails_total === 0 && (
+        <div className="home__sync-cta glass-card" id="home-sync-cta" style={{ background: 'rgba(56, 189, 248, 0.1)', borderColor: 'rgba(56, 189, 248, 0.2)' }}>
+          <div className="home__sync-cta-left">
+            <div className="home__sync-cta-icon">
+              <BoltIcon width={22} style={{ color: '#38bdf8' }} />
+            </div>
+            <div>
+              <div className="home__sync-cta-title">Start First Sync</div>
+              <div className="home__sync-cta-sub">Your account is connected successfully! Let's pull in your first batch of emails.</div>
+            </div>
+          </div>
+          <button 
+            className="home__sync-cta-btn" 
+            id="home-start-sync-btn" 
+            style={{ background: '#38bdf8', color: '#0f172a' }} 
+            onClick={() => {
+              setSyncState({ status: 'syncing' });
+              setActivePage('settings');
+              // To auto click we could just navigate and user sees progress bar
+            }}
+          >
+            Start Sync <ArrowRightIcon width={15} />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
