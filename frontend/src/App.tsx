@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useRef } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAppStore } from './store/appStore';
 import { fetchSyncStatus } from './api/sync';
@@ -29,7 +29,8 @@ const PageSkeleton: React.FC = () => (
 );
 
 const AppLayout: React.FC = () => {
-  const { activePage, sidebarCollapsed, isAuthenticated, setUser, setSyncState } = useAppStore();
+  const { activePage, sidebarCollapsed, isAuthenticated, setUser, setSyncState, syncState } = useAppStore();
+  const lastSyncedCountRef = useRef<number>(0);
 
   // Handle OAuth callback: parse ?user_id= from URL after Google login redirect
   useEffect(() => {
@@ -58,6 +59,33 @@ const AppLayout: React.FC = () => {
         .catch(() => setSyncState({ status: 'error' }));
     }
   }, [isAuthenticated, setSyncState]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const shouldPoll = syncState.status === 'syncing' || syncState.backfill_complete === false;
+    if (!shouldPoll) return;
+
+    const iv = window.setInterval(async () => {
+      try {
+        const st = await fetchSyncStatus();
+        setSyncState(st);
+        if ((st.emails_synced ?? 0) !== lastSyncedCountRef.current) {
+          lastSyncedCountRef.current = st.emails_synced ?? 0;
+          queryClient.invalidateQueries({ queryKey: ['summary'] });
+          queryClient.invalidateQueries({ queryKey: ['labels'] });
+          queryClient.invalidateQueries({ queryKey: ['volume'] });
+          queryClient.invalidateQueries({ queryKey: ['senders'] });
+          queryClient.invalidateQueries({ queryKey: ['heatmap'] });
+          queryClient.invalidateQueries({ queryKey: ['threads'] });
+        }
+      } catch {
+        setSyncState({ status: 'error' });
+      }
+    }, 3000);
+
+    return () => window.clearInterval(iv);
+  }, [isAuthenticated, setSyncState, syncState.status, syncState.backfill_complete]);
 
   if (!isAuthenticated) {
     return (

@@ -21,18 +21,8 @@ const Topbar: React.FC = () => {
 
     try {
       await triggerSync('incremental');
-      const iv = setInterval(async () => {
-        try {
-          const st = await fetchSyncStatus();
-          setSyncState(st);
-          if (st.status === 'done' || st.status === 'error') {
-            clearInterval(iv);
-          }
-        } catch (err) {
-          clearInterval(iv);
-          setSyncState({ status: 'error' });
-        }
-      }, 2000);
+      const st = await fetchSyncStatus();
+      setSyncState(st);
     } catch (e) {
       setSyncState({ status: 'error' });
     }

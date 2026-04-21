@@ -50,18 +50,8 @@ const HomePage: React.FC = () => {
 
     try {
       await triggerSync('smart', { date_from: globalDateRange.from, date_to: globalDateRange.to });
-      const iv = window.setInterval(async () => {
-        try {
-          const st = await fetchSyncStatus();
-          setSyncState(st);
-          if (st.status === 'done' || st.status === 'error') {
-            window.clearInterval(iv);
-          }
-        } catch {
-          window.clearInterval(iv);
-          setSyncState({ status: 'error' });
-        }
-      }, 2000);
+      const st = await fetchSyncStatus();
+      setSyncState(st);
     } catch {
       setSyncState({ status: 'error' });
     }

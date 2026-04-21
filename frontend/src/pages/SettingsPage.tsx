@@ -7,6 +7,7 @@ import './SettingsPage.css';
 
 const SettingsPage: React.FC = () => {
   const { user, logout, globalDateRange, setGlobalDateRange, syncState, setSyncState, isAuthenticated } = useAppStore();
+  const isBackfillPending = syncState.backfill_complete === false;
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -17,22 +18,13 @@ const SettingsPage: React.FC = () => {
   }, [isAuthenticated, setSyncState]);
 
   const handleFullSync = async () => {
-    setSyncState({ status: 'syncing', phase: 'recent', emails_total: 0, emails_synced: 0, detail: 'Syncing recent mail…', backfill_complete: false });
+    const detail = isBackfillPending ? 'Loading older data…' : 'Syncing recent mail…';
+    setSyncState({ status: 'syncing', phase: isBackfillPending ? 'backfill' : 'recent', emails_total: 0, emails_synced: 0, detail, backfill_complete: false });
 
     try {
       await triggerSync('smart', { date_from: globalDateRange.from, date_to: globalDateRange.to });
-      const iv = setInterval(async () => {
-        try {
-          const st = await fetchSyncStatus();
-          setSyncState(st);
-          if (st.status === 'done' || st.status === 'error') {
-            clearInterval(iv);
-          }
-        } catch (err) {
-          clearInterval(iv);
-          setSyncState({ status: 'error' });
-        }
-      }, 2000);
+      const st = await fetchSyncStatus();
+      setSyncState(st);
     } catch (e) {
       setSyncState({ status: 'error' });
     }
@@ -121,7 +113,7 @@ const SettingsPage: React.FC = () => {
               onClick={handleFullSync}
               disabled={syncState.status === 'syncing'}
             >
-              {syncState.status === 'syncing' ? 'Syncing...' : 'Start Smart Sync'}
+              {syncState.status === 'syncing' ? 'Syncing...' : isBackfillPending ? 'Load Older Data' : 'Start Smart Sync'}
             </button>
           </div>
         </div>
