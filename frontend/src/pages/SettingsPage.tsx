@@ -1,12 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAppStore } from '../store/appStore';
-import { ShieldCheckIcon, ArrowPathIcon, TrashIcon, MoonIcon, CircleStackIcon, KeyIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ShieldCheckIcon, ArrowPathIcon, ArrowLeftOnRectangleIcon, MoonIcon, CircleStackIcon, KeyIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { triggerSync, fetchSyncStatus } from '../api/sync';
 import { AUTH_GOOGLE_URL, isMockMode } from '../api/client';
 import './SettingsPage.css';
 
 const SettingsPage: React.FC = () => {
   const { user, logout, globalDateRange, setGlobalDateRange, syncState, setSyncState, isAuthenticated } = useAppStore();
+
+  useEffect(() => {
+    if (!isAuthenticated || isMockMode()) return;
+
+    fetchSyncStatus()
+      .then((st) => setSyncState(st))
+      .catch(() => setSyncState({ status: 'error' }));
+  }, [isAuthenticated, setSyncState]);
 
   const handleFullSync = async () => {
     setSyncState({ status: 'syncing', emails_total: 0, emails_synced: 0 });
@@ -190,20 +198,20 @@ const SettingsPage: React.FC = () => {
 
       {/* Danger zone */}
       <div className="settings__section">
-        <h3 className="settings__section-title settings__section-title--danger">Danger Zone</h3>
-        <div className="settings__card settings__card--danger">
+        <h3 className="settings__section-title">Session</h3>
+        <div className="settings__card">
           <div className="settings__row">
             <div className="settings__row-left">
               <div className="settings__row-icon">
-                <TrashIcon width={16} />
+                <ArrowLeftOnRectangleIcon width={16} />
               </div>
               <div>
-                <div className="settings__row-title">Delete Account & Data</div>
-                <div className="settings__row-sub">Permanently removes all emails, embeddings, and your account from Supabase</div>
+                <div className="settings__row-title">Sign Out</div>
+                <div className="settings__row-sub">Clears this browser session and returns to the Gmail sign-in screen</div>
               </div>
             </div>
-            <button className="settings__btn settings__btn--danger" id="settings-delete-btn" onClick={logout}>
-              Delete Account
+            <button className="settings__btn settings__btn--danger" id="settings-signout-btn" onClick={logout}>
+              Sign Out
             </button>
           </div>
         </div>

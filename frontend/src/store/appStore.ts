@@ -47,7 +47,13 @@ export const useAppStore = create<AppState>()(
       user: null,
       isAuthenticated: false,
       setUser: (user) => set({ user, isAuthenticated: !!user }),
-      logout: () => set({ user: null, isAuthenticated: false }),
+      logout: () =>
+        set({
+          user: null,
+          isAuthenticated: false,
+          syncState: { status: 'idle', emails_total: 0, emails_synced: 0, last_synced_at: null },
+          activePage: 'home',
+        }),
 
       // Sync
       syncState: { status: 'idle', emails_total: 0, emails_synced: 0, last_synced_at: null },
