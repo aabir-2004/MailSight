@@ -1,6 +1,7 @@
 import React, { Suspense, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAppStore } from './store/appStore';
+import { fetchSyncStatus } from './api/sync';
 import Sidebar from './components/Sidebar/Sidebar';
 import Topbar from './components/Topbar/Topbar';
 import Notifications from './components/Common/Notifications';
@@ -28,7 +29,7 @@ const PageSkeleton: React.FC = () => (
 );
 
 const AppLayout: React.FC = () => {
-  const { activePage, sidebarCollapsed, isAuthenticated, setUser } = useAppStore();
+  const { activePage, sidebarCollapsed, isAuthenticated, setUser, setSyncState } = useAppStore();
 
   // Handle OAuth callback: parse ?user_id= from URL after Google login redirect
   useEffect(() => {
@@ -47,7 +48,16 @@ const AppLayout: React.FC = () => {
       // Clean the URL so ?user_id= doesn't persist
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, []);
+  }, [isAuthenticated, setUser]);
+
+  // Fetch initial sync state from backend
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchSyncStatus()
+        .then((st) => setSyncState(st))
+        .catch(() => setSyncState({ status: 'error' }));
+    }
+  }, [isAuthenticated, setSyncState]);
 
   if (!isAuthenticated) {
     return (
