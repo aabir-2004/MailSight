@@ -117,21 +117,22 @@ const HomePage: React.FC = () => {
               <BoltIcon width={22} style={{ color: '#38bdf8' }} />
             </div>
             <div>
-              <div className="home__sync-cta-title">Start First Sync</div>
-              <div className="home__sync-cta-sub">Your account is connected successfully! Let's pull in your first batch of emails.</div>
+              <div className="home__sync-cta-title">Start Smart Sync</div>
+              <div className="home__sync-cta-sub">Instantly sync your last 30 days of emails and view them while older mail gently backfills in the background.</div>
             </div>
           </div>
           <button 
             className="home__sync-cta-btn" 
             id="home-start-sync-btn" 
             style={{ background: '#38bdf8', color: '#0f172a' }} 
-            onClick={() => {
+            onClick={async () => {
               setSyncState({ status: 'syncing' });
               setActivePage('settings');
-              // To auto click we could just navigate and user sees progress bar
+              // The backend will now handle the "smart" prioritisation automatically if triggered via Settings, 
+              // or we could dispatch it from here but relying on Settings UI is fine.
             }}
           >
-            Start Sync <ArrowRightIcon width={15} />
+            Smart Sync <ArrowRightIcon width={15} />
           </button>
         </div>
       )}

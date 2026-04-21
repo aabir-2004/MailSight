@@ -1,7 +1,7 @@
 import { apiClient, isMockMode, delay } from './client';
 import type { SyncState } from '../types';
 
-export async function triggerSync(mode: 'full' | 'incremental', dateRange?: { date_from?: string; date_to?: string }): Promise<{ task_id: string, status: string }> {
+export async function triggerSync(mode: 'full' | 'incremental' | 'smart', dateRange?: { date_from?: string; date_to?: string }): Promise<{ task_id: string, status: string }> {
   if (isMockMode()) {
     await delay(300);
     return { task_id: 'mock-task', status: 'queued' };

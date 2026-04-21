@@ -27,7 +27,7 @@ const SettingsPage: React.FC = () => {
     }
 
     try {
-      await triggerSync('full', { date_from: globalDateRange.from, date_to: globalDateRange.to });
+      await triggerSync('smart', { date_from: globalDateRange.from, date_to: globalDateRange.to });
       const iv = setInterval(async () => {
         try {
           const st = await fetchSyncStatus();
@@ -119,8 +119,8 @@ const SettingsPage: React.FC = () => {
                 <CircleStackIcon width={16} />
               </div>
               <div>
-                <div className="settings__row-title">Full Re-sync</div>
-                <div className="settings__row-sub">Re-index all emails from scratch (may take several minutes)</div>
+                <div className="settings__row-title">Smart Sync</div>
+                <div className="settings__row-sub">Prioritize latest 30 days instantly, then backfill safely in the background</div>
               </div>
             </div>
             <button 
@@ -129,7 +129,7 @@ const SettingsPage: React.FC = () => {
               onClick={handleFullSync}
               disabled={syncState.status === 'syncing'}
             >
-              {syncState.status === 'syncing' ? 'Syncing...' : 'Start Full Sync'}
+              {syncState.status === 'syncing' ? 'Syncing...' : 'Start Smart Sync'}
             </button>
           </div>
         </div>
