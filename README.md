@@ -56,7 +56,7 @@ uvicorn app.main:app --reload
 | LLM | Groq API — llama-3.1-8b-instant / mixtral-8x7b-32768 |
 | Embeddings | sentence-transformers (all-MiniLM-L6-v2) |
 | Cache | Upstash Redis |
-| Hosting | Vercel (frontend) + Render.com (backend) |
+| Hosting | Vercel (frontend) + Hugging Face Spaces (backend) |
 
 ## 🔑 Environment Variables
 
