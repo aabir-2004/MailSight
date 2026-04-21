@@ -22,6 +22,11 @@ class SyncStatus(BaseModel):
     last_synced_at: str | None
 
 
+def _first_row(response) -> dict | None:
+    data = getattr(response, "data", None) or []
+    return data[0] if data else None
+
+
 async def _run_sync_task(user_id: str, req: SyncRequest) -> None:
     await sync_gmail_messages(user_id, date_from=req.date_from, date_to=req.date_to)
 
@@ -37,10 +42,11 @@ async def start_sync(
         supabase.table("sync_state")
         .select("status")
         .eq("user_id", user_id)
-        .maybe_single()
+        .limit(1)
         .execute()
     )
-    if existing.data and existing.data.get("status") == "syncing":
+    existing_row = _first_row(existing)
+    if existing_row and existing_row.get("status") == "syncing":
         return {"task_id": f"sync-{user_id}", "mode": req.mode, "status": "already_syncing"}
 
     supabase.table("sync_state").upsert(
@@ -64,19 +70,20 @@ async def sync_status(user_id: str = Depends(get_current_user_id)):
         supabase.table("sync_state")
         .select("status,emails_total,emails_synced,last_synced_at")
         .eq("user_id", user_id)
-        .maybe_single()
+        .limit(1)
         .execute()
     )
-    if not response.data:
+    sync_row = _first_row(response)
+    if not sync_row:
         return SyncStatus(status="idle", emails_total=0, emails_synced=0, last_synced_at=None)
 
-    status = response.data.get("status", "idle")
+    status = sync_row.get("status", "idle")
     if status not in {"idle", "syncing", "done", "error"}:
         raise HTTPException(status_code=500, detail="Invalid sync status in database")
 
     return SyncStatus(
         status=status,
-        emails_total=response.data.get("emails_total") or 0,
-        emails_synced=response.data.get("emails_synced") or 0,
-        last_synced_at=response.data.get("last_synced_at"),
+        emails_total=sync_row.get("emails_total") or 0,
+        emails_synced=sync_row.get("emails_synced") or 0,
+        last_synced_at=sync_row.get("last_synced_at"),
     )
