@@ -1,6 +1,8 @@
 import React from 'react';
 import { BellIcon, ArrowPathIcon, UserIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useAppStore } from '../../store/appStore';
+import { triggerSync, fetchSyncStatus } from '../../api/sync';
+import { isMockMode } from '../../api/client';
 import './Topbar.css';
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
@@ -15,20 +17,42 @@ const Topbar: React.FC = () => {
   const { activePage, user, setActivePage, syncState, setSyncState } = useAppStore();
   const { title, subtitle } = PAGE_TITLES[activePage] || PAGE_TITLES.home;
 
-  const handleSync = () => {
+  const handleSync = async () => {
     setSyncState({ status: 'syncing', emails_total: 0, emails_synced: 0 });
-    // Simulate sync progress
-    let synced = 0;
-    const total = 250 + Math.floor(Math.random() * 200);
-    setSyncState({ emails_total: total });
-    const iv = setInterval(() => {
-      synced = Math.min(synced + Math.floor(Math.random() * 30 + 10), total);
-      setSyncState({ emails_synced: synced });
-      if (synced >= total) {
-        clearInterval(iv);
-        setSyncState({ status: 'done', last_synced_at: new Date().toISOString() });
-      }
-    }, 300);
+
+    if (isMockMode()) {
+      // Simulate sync progress
+      let synced = 0;
+      const total = 250 + Math.floor(Math.random() * 200);
+      setSyncState({ emails_total: total });
+      const iv = setInterval(() => {
+        synced = Math.min(synced + Math.floor(Math.random() * 30 + 10), total);
+        setSyncState({ emails_synced: synced });
+        if (synced >= total) {
+          clearInterval(iv);
+          setSyncState({ status: 'done', last_synced_at: new Date().toISOString() });
+        }
+      }, 300);
+      return;
+    }
+
+    try {
+      await triggerSync('incremental');
+      const iv = setInterval(async () => {
+        try {
+          const st = await fetchSyncStatus();
+          setSyncState(st);
+          if (st.status === 'done' || st.status === 'error' || st.status === 'failed') {
+            clearInterval(iv);
+          }
+        } catch (err) {
+          clearInterval(iv);
+          setSyncState({ status: 'error' });
+        }
+      }, 2000);
+    } catch (e) {
+      setSyncState({ status: 'error' });
+    }
   };
 
   return (

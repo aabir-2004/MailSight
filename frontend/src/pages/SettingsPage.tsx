@@ -1,24 +1,48 @@
 import React from 'react';
 import { useAppStore } from '../store/appStore';
 import { ShieldCheckIcon, ArrowPathIcon, TrashIcon, MoonIcon, CircleStackIcon, KeyIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { triggerSync, fetchSyncStatus } from '../api/sync';
+import { isMockMode } from '../api/client';
 import './SettingsPage.css';
 
 const SettingsPage: React.FC = () => {
   const { user, logout, globalDateRange, setGlobalDateRange, setSyncState } = useAppStore();
 
-  const handleFullSync = () => {
+  const handleFullSync = async () => {
     setSyncState({ status: 'syncing', emails_total: 0, emails_synced: 0 });
-    let synced = 0;
-    const total = 2000 + Math.floor(Math.random() * 8000);
-    setSyncState({ emails_total: total });
-    const iv = setInterval(() => {
-      synced = Math.min(synced + Math.floor(Math.random() * 80 + 40), total);
-      setSyncState({ emails_synced: synced });
-      if (synced >= total) {
-        clearInterval(iv);
-        setSyncState({ status: 'done', last_synced_at: new Date().toISOString() });
-      }
-    }, 200);
+
+    if (isMockMode()) {
+      let synced = 0;
+      const total = 2000 + Math.floor(Math.random() * 8000);
+      setSyncState({ emails_total: total });
+      const iv = setInterval(() => {
+        synced = Math.min(synced + Math.floor(Math.random() * 80 + 40), total);
+        setSyncState({ emails_synced: synced });
+        if (synced >= total) {
+          clearInterval(iv);
+          setSyncState({ status: 'done', last_synced_at: new Date().toISOString() });
+        }
+      }, 200);
+      return;
+    }
+
+    try {
+      await triggerSync('full', { date_from: globalDateRange.from, date_to: globalDateRange.to });
+      const iv = setInterval(async () => {
+        try {
+          const st = await fetchSyncStatus();
+          setSyncState(st);
+          if (st.status === 'done' || st.status === 'error' || st.status === 'failed') {
+            clearInterval(iv);
+          }
+        } catch (err) {
+          clearInterval(iv);
+          setSyncState({ status: 'error' });
+        }
+      }, 2000);
+    } catch (e) {
+      setSyncState({ status: 'error' });
+    }
   };
 
   return (
@@ -92,8 +116,13 @@ const SettingsPage: React.FC = () => {
                 <div className="settings__row-sub">Re-index all emails from scratch (may take several minutes)</div>
               </div>
             </div>
-            <button className="settings__btn settings__btn--primary" id="settings-full-sync-btn" onClick={handleFullSync}>
-              Start Full Sync
+            <button 
+              className={`settings__btn settings__btn--primary ${syncState.status === 'syncing' ? 'opacity-50 cursor-not-allowed' : ''}`} 
+              id="settings-full-sync-btn" 
+              onClick={handleFullSync}
+              disabled={syncState.status === 'syncing'}
+            >
+              {syncState.status === 'syncing' ? 'Syncing...' : 'Start Full Sync'}
             </button>
           </div>
         </div>
