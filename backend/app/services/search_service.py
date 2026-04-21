@@ -1,26 +1,29 @@
-from sentence_transformers import SentenceTransformer
 from groq import Groq
 from app.core.config import settings
 from app.core.db import supabase
 import time
 
-# Initialize once to prevent reloading per request
-# If the machine doesn't have enough RAM, this will take ~100MB
-embedding_model = SentenceTransformer(settings.EMBEDDING_MODEL)
+embedding_model = None
 
 # Initialize Groq for LLM orchestration
 groq_client = Groq(api_key=settings.GROQ_API_KEY)
+
+
+def get_embedding_model():
+    global embedding_model
+    if embedding_model is None:
+        from sentence_transformers import SentenceTransformer
+
+        embedding_model = SentenceTransformer(settings.EMBEDDING_MODEL)
+    return embedding_model
 
 async def perform_rag_search(query: str, user_id: str, top_k: int = 10) -> dict:
     start_time = time.time()
     
     # 1. Embed query (fast CPU execution)
-    query_vector = embedding_model.encode(query).tolist()
-    
     # 2. Vector Search (Assume RPC exists -> user must execute this SQL in Supabase)
-    # create function match_emails(query_embedding vector, p_user_id uuid, match_count int)
-    # returns table(id uuid, subject text, snippet text, sender_email text, sender_name text, date timestamptz, similarity float)
     try:
+        query_vector = get_embedding_model().encode(query).tolist()
         search_res = supabase.rpc(
             "match_emails",
             {

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import email.utils
+import asyncio
 import re
 from collections import Counter
 from datetime import datetime, timezone
@@ -156,6 +157,53 @@ async def _gmail_get(client: httpx.AsyncClient, path: str, access_token: str, pa
     return response.json()
 
 
+async def _fetch_message_detail(
+    client: httpx.AsyncClient,
+    access_token: str,
+    message: dict[str, str],
+    semaphore: asyncio.Semaphore,
+) -> dict[str, Any] | None:
+    gmail_id = message["id"]
+    params: dict[str, Any] = {
+        "format": "full" if settings.GMAIL_SYNC_FULL_BODY else "metadata",
+        "metadataHeaders": ["Subject", "From", "Date"],
+    }
+
+    async with semaphore:
+        try:
+            return await _gmail_get(client, f"messages/{gmail_id}", access_token, params)
+        except HTTPException as exc:
+            print(f"[Gmail Sync] Skipping message {gmail_id}: {exc.detail}")
+            return None
+
+
+def _email_row_from_detail(user_id: str, detail: dict[str, Any]) -> tuple[dict[str, Any], list[str], str | None]:
+    headers = _headers_by_name(detail.get("payload", {}).get("headers"))
+    sender_email, sender_name = _parse_sender(headers.get("from", ""))
+    label_ids = detail.get("labelIds", []) or []
+    snippet = detail.get("snippet", "")
+    body_text = _extract_body(detail.get("payload")) if settings.GMAIL_SYNC_FULL_BODY else snippet
+
+    return (
+        {
+            "user_id": user_id,
+            "gmail_id": detail["id"],
+            "thread_id": detail.get("threadId"),
+            "subject": headers.get("subject", ""),
+            "sender_email": sender_email,
+            "sender_name": sender_name,
+            "body_text": body_text,
+            "snippet": snippet,
+            "date": _parse_gmail_date(headers.get("date"), detail.get("internalDate")),
+            "is_read": "UNREAD" not in label_ids,
+            "is_starred": "STARRED" in label_ids,
+            "raw_size_bytes": detail.get("sizeEstimate", 0),
+        },
+        label_ids,
+        detail.get("historyId"),
+    )
+
+
 def _upsert_labels(user_id: str, gmail_label_ids: set[str]) -> dict[str, str]:
     if not gmail_label_ids:
         return {}
@@ -267,7 +315,7 @@ async def sync_gmail_messages(user_id: str, date_from: str | None = None, date_t
         page_token: str | None = None
         query = _gmail_query(date_from, date_to)
 
-        async with httpx.AsyncClient(timeout=60) as client:
+        async with httpx.AsyncClient(timeout=60, http2=True) as client:
             while True:
                 params: dict[str, Any] = {
                     "maxResults": min(settings.GMAIL_MAX_RESULTS, 500),
@@ -295,43 +343,31 @@ async def sync_gmail_messages(user_id: str, date_from: str | None = None, date_t
             labels_by_message: dict[str, list[str]] = {}
             latest_history_id: str | None = None
 
-            for index, message in enumerate(messages, start=1):
-                gmail_id = message["id"]
-                detail = await _gmail_get(
-                    client,
-                    f"messages/{gmail_id}",
-                    access_token,
-                    {
-                        "format": "full",
-                        "metadataHeaders": ["Subject", "From", "Date"],
-                    },
-                )
-                headers = _headers_by_name(detail.get("payload", {}).get("headers"))
-                sender_email, sender_name = _parse_sender(headers.get("from", ""))
-                label_ids = detail.get("labelIds", []) or []
-                all_label_ids.update(label_ids)
-                labels_by_message[gmail_id] = label_ids
-                latest_history_id = detail.get("historyId") or latest_history_id
+            semaphore = asyncio.Semaphore(max(1, settings.GMAIL_CONCURRENCY))
+            detail_tasks = [
+                _fetch_message_detail(client, access_token, message, semaphore)
+                for message in messages
+            ]
 
-                email_rows.append(
-                    {
-                        "user_id": user_id,
-                        "gmail_id": gmail_id,
-                        "thread_id": detail.get("threadId"),
-                        "subject": headers.get("subject", ""),
-                        "sender_email": sender_email,
-                        "sender_name": sender_name,
-                        "body_text": _extract_body(detail.get("payload")),
-                        "snippet": detail.get("snippet", ""),
-                        "date": _parse_gmail_date(headers.get("date"), detail.get("internalDate")),
-                        "is_read": "UNREAD" not in label_ids,
-                        "is_starred": "STARRED" in label_ids,
-                        "raw_size_bytes": detail.get("sizeEstimate", 0),
-                    }
-                )
+            processed = 0
+            for detail_future in asyncio.as_completed(detail_tasks):
+                detail = await detail_future
+                processed += 1
 
-                if index % 10 == 0:
-                    _set_sync_state(user_id, status="syncing", emails_total=len(messages), emails_synced=index)
+                if detail:
+                    email_row, label_ids, history_id = _email_row_from_detail(user_id, detail)
+                    email_rows.append(email_row)
+                    all_label_ids.update(label_ids)
+                    labels_by_message[email_row["gmail_id"]] = label_ids
+                    latest_history_id = history_id or latest_history_id
+
+                if processed % 25 == 0 or processed == len(messages):
+                    _set_sync_state(
+                        user_id,
+                        status="syncing",
+                        emails_total=len(messages),
+                        emails_synced=processed,
+                    )
 
         if email_rows:
             supabase.table("emails").upsert(email_rows, on_conflict="user_id,gmail_id").execute()

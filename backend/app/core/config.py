@@ -30,6 +30,8 @@ class Settings(BaseSettings):
 
     # Sync
     GMAIL_MAX_RESULTS: int = 500
+    GMAIL_CONCURRENCY: int = 20
+    GMAIL_SYNC_FULL_BODY: bool = False
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
     EMBEDDING_DIM: int = 384
     SEARCH_TOP_K: int = 20
