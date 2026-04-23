@@ -75,7 +75,7 @@ const MailboxPage: React.FC = () => {
       
       console.log(`[Mailbox] Fetching emails with params: ${params.toString()}`);
       try {
-        const res = await apiClient.get<EmailCard[]>(`/emails?${params.toString()}`);
+        const res = await apiClient.get<EmailCard[]>(`/mailbox/list?${params.toString()}`);
         console.log(`[Mailbox] Received ${res.data?.length} emails`);
         return res.data;
       } catch (err) {

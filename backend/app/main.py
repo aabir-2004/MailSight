@@ -29,7 +29,7 @@ app.include_router(search.router,    prefix=API_PREFIX,                 tags=["S
 app.include_router(analytics.router, prefix=API_PREFIX + "/analytics",  tags=["Analytics"])
 app.include_router(analyse.router,   prefix=API_PREFIX,                 tags=["Analyse"])
 app.include_router(queries.router,   prefix=API_PREFIX + "/queries",    tags=["Queries"])
-app.include_router(emails.router,    prefix=API_PREFIX,                 tags=["Emails"])
+app.include_router(emails.router,    prefix=API_PREFIX + "/mailbox",    tags=["Emails"])
 
 
 @app.get("/health", tags=["Health"])

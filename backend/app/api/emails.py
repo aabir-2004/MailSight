@@ -16,7 +16,7 @@ class EmailCard(BaseModel):
     date: Optional[str] = ""
     labels: List[str] = []
 
-@router.get("/emails", response_model=List[EmailCard])
+@router.get("/list", response_model=List[EmailCard])
 async def list_emails(
     label: Optional[str] = Query(None),
     sort_by: str = Query("date"),
