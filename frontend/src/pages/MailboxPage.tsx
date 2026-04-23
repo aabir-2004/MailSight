@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowsUpDownIcon, TagIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
-import { useAppStore } from '../store/appStore';
-import { apiClient } from '../api/client';
+import { searchEmails } from '../api/search';
 import type { EmailCard } from '../types';
 import './SearchPage.css'; // Reuse search page styles for consistency
 
@@ -60,32 +59,54 @@ const EmailResultCard: React.FC<{ email: EmailCard; index: number; onLabelClick:
 );
 
 const MailboxPage: React.FC = () => {
-  const {  } = useAppStore();
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'date' | 'sender'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const { data: emails = [], isLoading, error, isError } = useQuery({
-    queryKey: ['emails', selectedLabel, sortBy, sortOrder],
+  // Use the existing /search endpoint with a broad query to fetch all emails
+  const { data: searchResult, isLoading, error, isError } = useQuery({
+    queryKey: ['inbox-emails'],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (selectedLabel) params.append('label', selectedLabel);
-      params.append('sort_by', sortBy);
-      params.append('sort_order', sortOrder);
-      
-      console.log(`[Mailbox] Fetching emails with params: ${params.toString()}`);
-      try {
-        const res = await apiClient.get<EmailCard[]>(`/analytics/list?${params.toString()}`);
-        console.log(`[Mailbox] Received ${res.data?.length} emails`);
-        return res.data;
-      } catch (err) {
-        console.error('[Mailbox] Fetch failed:', err);
-        throw err;
-      }
+      console.log('[Mailbox] Fetching emails via /search endpoint');
+      const result = await searchEmails({ query: 'all recent emails', top_k: 100 });
+      console.log(`[Mailbox] Received ${result.sources?.length} emails`);
+      return result;
     },
-    staleTime: 2 * 60 * 1000,
+    staleTime: 3 * 60 * 1000,
     retry: 1,
   });
+
+  // Apply client-side sorting and filtering on the fetched results
+  const emails = useMemo(() => {
+    const raw = searchResult?.sources || [];
+    
+    // Filter by label if selected
+    let filtered = raw;
+    if (selectedLabel) {
+      filtered = raw.filter(e => e.labels.includes(selectedLabel));
+    }
+
+    // Sort
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === 'sender') {
+        const cmp = (a.sender_name || '').localeCompare(b.sender_name || '');
+        return sortOrder === 'asc' ? cmp : -cmp;
+      } else {
+        const cmp = new Date(a.date).getTime() - new Date(b.date).getTime();
+        return sortOrder === 'desc' ? -cmp : cmp;
+      }
+    });
+
+    return sorted;
+  }, [searchResult, selectedLabel, sortBy, sortOrder]);
+
+  // Collect all unique labels from the results for quick reference
+  const allLabels = useMemo(() => {
+    const raw = searchResult?.sources || [];
+    const set = new Set<string>();
+    raw.forEach(e => e.labels.forEach(l => set.add(l)));
+    return Array.from(set).sort();
+  }, [searchResult]);
 
   return (
     <div className="mailbox-page animate-fade-in">
@@ -95,7 +116,7 @@ const MailboxPage: React.FC = () => {
                 Inbox
             </h2>
             <p className="home__hero-sub">
-                {selectedLabel ? `Showing ${selectedLabel} emails` : 'All your synced emails in one place'}
+                {selectedLabel ? `Showing "${selectedLabel}" emails` : 'All your synced emails in one place'}
             </p>
         </div>
         
@@ -114,13 +135,28 @@ const MailboxPage: React.FC = () => {
                 <ArrowsUpDownIcon width={14} /> Sort: {sortBy === 'sender' ? `Sender (${sortOrder === 'asc' ? 'A-Z' : 'Z-A'})` : 'Date'}
             </button>
             
-            <button 
-                className="filter-btn"
-                onClick={() => setSelectedLabel(null)}
-                disabled={!selectedLabel}
-            >
-                <TagIcon width={14} /> {selectedLabel || 'Filter Label'}
-            </button>
+            {selectedLabel ? (
+              <button 
+                  className="filter-btn active"
+                  onClick={() => setSelectedLabel(null)}
+              >
+                  <TagIcon width={14} /> ✕ {selectedLabel}
+              </button>
+            ) : (
+              <div className="filter-btn" style={{ position: 'relative' }}>
+                  <TagIcon width={14} /> Filter Label
+                  {allLabels.length > 0 && (
+                    <select 
+                      style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
+                      value=""
+                      onChange={(e) => setSelectedLabel(e.target.value || null)}
+                    >
+                      <option value="">All Labels</option>
+                      {allLabels.map(l => <option key={l} value={l}>{l}</option>)}
+                    </select>
+                  )}
+              </div>
+            )}
         </div>
       </div>
 
@@ -159,10 +195,7 @@ const MailboxPage: React.FC = () => {
       ) : (
         <div className="empty-state">
             <EnvelopeIcon width={40} style={{ opacity: 0.2, marginBottom: 16 }} />
-            <p>No emails found in this category.</p>
-            <p style={{ fontSize: '0.8rem', opacity: 0.5, marginTop: 8 }}>
-                Checked for user ID: {localStorage.getItem('maillens-store') ? 'Logged In' : 'Not Found'}
-            </p>
+            <p>{selectedLabel ? `No emails found with label "${selectedLabel}".` : 'No emails found.'}</p>
         </div>
       )}
     </div>
