@@ -65,7 +65,7 @@ const MailboxPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<'date' | 'sender'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const { data: emails = [], isLoading } = useQuery({
+  const { data: emails = [], isLoading, error, isError } = useQuery({
     queryKey: ['emails', selectedLabel, sortBy, sortOrder],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -73,10 +73,18 @@ const MailboxPage: React.FC = () => {
       params.append('sort_by', sortBy);
       params.append('sort_order', sortOrder);
       
-      const res = await apiClient.get<EmailCard[]>(`/emails?${params.toString()}`);
-      return res.data;
+      console.log(`[Mailbox] Fetching emails with params: ${params.toString()}`);
+      try {
+        const res = await apiClient.get<EmailCard[]>(`/emails?${params.toString()}`);
+        console.log(`[Mailbox] Received ${res.data?.length} emails`);
+        return res.data;
+      } catch (err) {
+        console.error('[Mailbox] Fetch failed:', err);
+        throw err;
+      }
     },
     staleTime: 2 * 60 * 1000,
+    retry: 1,
   });
 
   return (
@@ -116,7 +124,15 @@ const MailboxPage: React.FC = () => {
         </div>
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <div className="error-state glass-card" style={{ padding: 24, textAlign: 'center', color: '#ff4d4d' }}>
+            <p><strong>Error loading emails:</strong></p>
+            <p style={{ opacity: 0.8, fontSize: '0.9rem' }}>{(error as any)?.message || 'Unknown error'}</p>
+            <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => window.location.reload()}>
+                Try Again
+            </button>
+        </div>
+      ) : isLoading ? (
         <div className="search-page__skeleton">
           {[1,2,3,4,5].map(i => (
             <div key={i} className="email-card glass-card">
@@ -144,6 +160,9 @@ const MailboxPage: React.FC = () => {
         <div className="empty-state">
             <EnvelopeIcon width={40} style={{ opacity: 0.2, marginBottom: 16 }} />
             <p>No emails found in this category.</p>
+            <p style={{ fontSize: '0.8rem', opacity: 0.5, marginTop: 8 }}>
+                Checked for user ID: {localStorage.getItem('maillens-store') ? 'Logged In' : 'Not Found'}
+            </p>
         </div>
       )}
     </div>
