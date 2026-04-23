@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { FunnelIcon, ChevronDownIcon, ArrowsUpDownIcon, TagIcon } from '@heroicons/react/24/outline';
+import { ArrowsUpDownIcon, TagIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 import { useAppStore } from '../store/appStore';
 import { apiClient } from '../api/client';
 import type { EmailCard } from '../types';
@@ -60,7 +60,7 @@ const EmailResultCard: React.FC<{ email: EmailCard; index: number; onLabelClick:
 );
 
 const MailboxPage: React.FC = () => {
-  const { globalDateRange } = useAppStore();
+  const {  } = useAppStore();
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'date' | 'sender'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');

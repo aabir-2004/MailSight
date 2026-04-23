@@ -35,6 +35,7 @@ const SUGGESTION_PROMPTS = [
   'Emails about shipping or orders',
 ];
 
+const EmailResultCard: React.FC<{ email: EmailCard; index: number }> = ({ email, index }) => {
   const { setActivePage } = useAppStore();
   
   return (
