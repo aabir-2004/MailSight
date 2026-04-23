@@ -149,7 +149,7 @@ export interface DateRange {
 export type Granularity = 'day' | 'week' | 'month';
 
 // ─── UI State ────────────────────────────────────────────────────────────────
-export type Page = 'home' | 'search' | 'dashboard' | 'analyse' | 'settings';
+export type Page = 'home' | 'mails' | 'search' | 'dashboard' | 'analyse' | 'settings';
 
 export interface Notification {
   id: string;

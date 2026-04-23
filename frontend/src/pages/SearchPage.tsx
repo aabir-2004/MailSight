@@ -35,37 +35,51 @@ const SUGGESTION_PROMPTS = [
   'Emails about shipping or orders',
 ];
 
-const EmailResultCard: React.FC<{ email: EmailCard; index: number }> = ({ email, index }) => (
-  <div
-    className="email-card animate-fade-in"
-    style={{ animationDelay: `${index * 60}ms` }}
-    id={`email-result-${email.id}`}
-  >
-    <div className="email-card__avatar">
-      {email.sender_name.charAt(0).toUpperCase()}
-    </div>
-    <div className="email-card__body">
-      <div className="email-card__header">
-        <span className="email-card__sender">{email.sender_name}</span>
-        <span className="email-card__date">{HOUR_DIFF(email.date)}</span>
+  const { setActivePage } = useAppStore();
+  
+  return (
+    <div
+      className="email-card animate-fade-in"
+      style={{ animationDelay: `${index * 60}ms` }}
+      id={`email-result-${email.id}`}
+    >
+      <div className="email-card__avatar">
+        {email.sender_name.charAt(0).toUpperCase()}
       </div>
-      <div className="email-card__subject">{email.subject}</div>
-      <div className="email-card__snippet">{email.snippet}</div>
-      <div className="email-card__footer">
-        <div className="email-card__labels">
-          {email.labels.map((l) => (
-            <span key={l} className={`badge badge-${LABEL_COLOR[l] ?? 'muted'}`}>{l}</span>
-          ))}
+      <div className="email-card__body">
+        <div className="email-card__header">
+          <span className="email-card__sender">{email.sender_name}</span>
+          <span className="email-card__date">{HOUR_DIFF(email.date)}</span>
         </div>
-        {email.relevance_score && (
-          <span className="email-card__score">
-            {(email.relevance_score * 100).toFixed(0)}% match
-          </span>
-        )}
+        <div className="email-card__subject">{email.subject}</div>
+        <div className="email-card__snippet">{email.snippet}</div>
+        <div className="email-card__footer">
+          <div className="email-card__labels">
+            {email.labels.map((l) => (
+              <span 
+                key={l} 
+                className={`badge badge-${LABEL_COLOR[l] ?? 'muted'} clickable`}
+                onClick={() => {
+                    // This is a simple implementation; ideally we'd pass a state to MailboxPage
+                    // For now, we'll just set the active page. 
+                    // To handle the label selection, we might need a global state or search params.
+                    setActivePage('mails');
+                }}
+              >
+                {l}
+              </span>
+            ))}
+          </div>
+          {email.relevance_score && (
+            <span className="email-card__score">
+              {(email.relevance_score * 100).toFixed(0)}% match
+            </span>
+          )}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const SearchPage: React.FC = () => {
   const { recentQueries, addRecentQuery } = useAppStore();

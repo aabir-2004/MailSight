@@ -6,6 +6,7 @@ import './Sidebar.css';
 
 const NAV_ITEMS: { id: Page; icon: React.ReactNode; label: string; badge?: string }[] = [
   { id: 'home',      icon: <HomeIcon width={18} />,          label: 'Home' },
+  { id: 'mails',     icon: <EnvelopeIcon width={18} />,       label: 'Inbox' },
   { id: 'search',    icon: <MagnifyingGlassIcon width={18} />,        label: 'Smart Search' },
   { id: 'dashboard', icon: <Squares2X2Icon width={18} />, label: 'Analytics' },
   { id: 'analyse',   icon: <BeakerIcon width={18} />,        label: 'AI Analysis' },

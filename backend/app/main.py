@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api import auth, sync, search, analytics, analyse, queries
+from app.api import auth, sync, search, analytics, analyse, queries, emails
 from app.services.sync_orchestrator import resume_auto_backfills_from_db
 
 app = FastAPI(
@@ -29,6 +29,7 @@ app.include_router(search.router,    prefix=API_PREFIX,                 tags=["S
 app.include_router(analytics.router, prefix=API_PREFIX + "/analytics",  tags=["Analytics"])
 app.include_router(analyse.router,   prefix=API_PREFIX,                 tags=["Analyse"])
 app.include_router(queries.router,   prefix=API_PREFIX + "/queries",    tags=["Queries"])
+app.include_router(emails.router,    prefix=API_PREFIX,                 tags=["Emails"])
 
 
 @app.get("/health", tags=["Health"])

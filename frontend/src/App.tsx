@@ -13,6 +13,7 @@ const DashboardPage = React.lazy(() => import('./pages/DashboardPage'));
 const AnalysePage   = React.lazy(() => import('./pages/AnalysePage'));
 const SettingsPage  = React.lazy(() => import('./pages/SettingsPage'));
 const AuthPage      = React.lazy(() => import('./pages/AuthPage'));
+const MailboxPage   = React.lazy(() => import('./pages/MailboxPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -102,6 +103,7 @@ const AppLayout: React.FC = () => {
       case 'dashboard': return <DashboardPage />;
       case 'analyse':   return <AnalysePage />;
       case 'settings':  return <SettingsPage />;
+      case 'mails':     return <MailboxPage />;
       default:          return <HomePage />;
     }
   };

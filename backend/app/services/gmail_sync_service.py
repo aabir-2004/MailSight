@@ -15,6 +15,7 @@ from fastapi import HTTPException
 from app.core.config import settings
 from app.core.db import supabase
 from app.core.security import decrypt_token
+from app.services.topic_service import extract_topics
 
 GMAIL_API_BASE = "https://gmail.googleapis.com/gmail/v1/users/me"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -527,6 +528,15 @@ async def _sync_message_page(
 
         if detail:
             email_row, label_ids, history_id = _email_row_from_detail(user_id, detail)
+            
+            # AI Topic Labeling (Topic extraction)
+            topics = await extract_topics(
+                email_row.get("subject", ""),
+                email_row.get("snippet", ""),
+                email_row.get("sender_name", "")
+            )
+            label_ids.extend(topics)
+            
             email_rows.append(email_row)
             all_label_ids.update(label_ids)
             labels_by_message[email_row["gmail_id"]] = label_ids
