@@ -27,42 +27,41 @@ async def list_emails(
     List emails with optional label filtering and sorting.
     """
     try:
-        # 1. Start query on emails table
+        # 1. Fetch base emails (matching analytics pattern)
+        # We fetch more than the display limit to handle local filtering if needed, 
+        # but for now we rely on the DB query.
         query = supabase.table("emails").select("id, subject, sender_email, sender_name, snippet, date")
         query = query.eq("user_id", user_id)
 
-        # 2. Filtering by label if requested
+        # 2. Filtering by label
         if label:
-            # Find the label ID first
-            label_resp = supabase.table("labels").select("id").eq("user_id", user_id).eq("name", label).execute()
-            if label_resp.data:
-                label_id = label_resp.data[0]["id"]
-                # Get email IDs that have this label
-                join_resp = supabase.table("email_labels").select("email_id").eq("label_id", label_id).execute()
-                email_ids = [r["email_id"] for r in join_resp.data or []]
-                if not email_ids:
+            label_res = supabase.table("labels").select("id").eq("user_id", user_id).eq("name", label).execute()
+            if label_res.data:
+                lid = label_res.data[0]["id"]
+                join_res = supabase.table("email_labels").select("email_id").eq("label_id", lid).execute()
+                eids = [r["email_id"] for r in (join_res.data or [])]
+                if not eids:
                     return []
-                query = query.in_("id", email_ids)
+                query = query.in_("id", eids)
             else:
                 return []
 
-        # 3. Sorting
+        # 3. Sorting & Range
         is_desc = (sort_order == "desc")
         if sort_by == "sender":
-            query = query.order("sender_name", desc=is_desc).order("date", desc=True)
+            query = query.order("sender_name", desc=is_desc)
         else:
             query = query.order("date", desc=is_desc)
-
-        # 4. Execute with a reasonable limit
-        response = query.limit(100).execute()
+            
+        # Use range instead of limit to match analytics service style
+        response = query.range(0, 99).execute()
         email_rows = response.data or []
 
         if not email_rows:
             return []
 
-        # 5. Fetch labels for these emails to display badges
+        # 4. Fetch labels for badges
         email_uuids = [r["id"] for r in email_rows]
-        # We use a join select to get the label names
         labels_resp = (
             supabase.table("email_labels")
             .select("email_id, labels(name)")
@@ -70,35 +69,28 @@ async def list_emails(
             .execute()
         )
         
-        # Build a map of email_id -> list of label names
         label_map = {}
         for r in (labels_resp.data or []):
             eid = r.get("email_id")
-            label_data = r.get("labels")
-            if not eid or not label_data:
-                continue
-                
-            lname = label_data.get("name")
-            if lname:
+            lname = r.get("labels", {}).get("name") if r.get("labels") else None
+            if eid and lname:
                 if eid not in label_map:
                     label_map[eid] = []
                 label_map[eid].append(lname)
 
-        # 6. Map to response model
-        results = []
-        for row in email_rows:
-            eid = row["id"]
-            results.append(EmailCard(
-                id=str(eid),
+        # 5. Map results
+        return [
+            EmailCard(
+                id=str(row["id"]),
                 subject=row.get("subject") or "(No Subject)",
                 sender_email=row.get("sender_email") or "",
                 sender_name=row.get("sender_name") or row.get("sender_email") or "Unknown",
                 snippet=row.get("snippet") or "",
                 date=str(row.get("date") or ""),
-                labels=label_map.get(eid, [])
-            ))
-
-        return results
+                labels=label_map.get(row["id"], [])
+            )
+            for row in email_rows
+        ]
     except Exception as e:
-        print(f"[Emails API] Error listing emails: {e}")
+        print(f"[Emails API] Critical Error: {e}")
         return []
