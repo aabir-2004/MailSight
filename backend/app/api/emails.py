@@ -9,12 +9,12 @@ router = APIRouter()
 
 class EmailCard(BaseModel):
     id: str
-    subject: str
-    sender_email: str
-    sender_name: str
-    snippet: str
-    date: str
-    labels: List[str]
+    subject: Optional[str] = ""
+    sender_email: Optional[str] = ""
+    sender_name: Optional[str] = ""
+    snippet: Optional[str] = ""
+    date: Optional[str] = ""
+    labels: List[str] = []
 
 @router.get("/emails", response_model=List[EmailCard])
 async def list_emails(
